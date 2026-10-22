@@ -484,10 +484,16 @@ function go(page) {
   });
 }
 
+
 function showLocationError(message) {
-  const result = $("#k-result");
+  const result = document.querySelector("#k-result");
+
   if (result) {
-    result.innerHTML = `<div class="result-box error-box"><b>लोकेशन उपलब्ध नहीं</b><p>${message}</p></div>`;
+    result.innerHTML =
+      '<div class="result-box error-box">' +
+      '<b>लोकेशन उपलब्ध नहीं</b>' +
+      '<p>' + String(message) + '</p>' +
+      '</div>';
   }
 }
 
