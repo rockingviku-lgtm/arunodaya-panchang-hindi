@@ -5,6 +5,10 @@ import {
   searchBirthPlaces,
   getBirthTimezoneOffset
 } from "./location.js";
+import {
+  renderMuhuratResult,
+  updateMuhuratCards
+} from "./muhurat.js";
 
 const $ = (s) => document.querySelector(s);
 
