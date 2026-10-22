@@ -69,47 +69,21 @@ function navamsaLongitude(longitude) {
   return norm(navamsaSign * 30 + degreeWithinNavamsa);
 }
 function parseBirthDateTime(dateText, timeText, timezoneMinutes) {
-  const match = typeof dateText === "string"
-    ? dateText.trim().match(/^(\d{2})-(\d{2})-(\d{4})$/)
-    : null;
-
-  if (!match) {
-    throw new Error("जन्म तारीख DD-MM-YYYY में लिखें, जैसे 08-01-2002");
+  if (typeof dateText !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateText)) {
+    throw new Error("जन्म तारीख चुनें (दिन-महीना-वर्ष)");
   }
-
-  if (
-    typeof timeText !== "string" ||
-    !/^\d{2}:\d{2}$/.test(timeText)
-  ) {
-    throw new Error("जन्म समय HH:MM में भरें");
+  if (typeof timeText !== "string" || !/^\d{2}:\d{2}$/.test(timeText)) {
+    throw new Error("जन्म समय सही भरें");
   }
-
-  const [, dd, mm, yyyy] = match;
-  const day = Number(dd);
-  const month = Number(mm);
-  const year = Number(yyyy);
+  const [year, month, day] = dateText.split("-").map(Number);
   const [hour, minute] = timeText.split(":").map(Number);
-
   const check = new Date(Date.UTC(year, month - 1, day));
-
-  if (
-    check.getUTCFullYear() !== year ||
-    check.getUTCMonth() !== month - 1 ||
-    check.getUTCDate() !== day ||
-    hour > 23 ||
-    minute > 59
-  ) {
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day || hour > 23 || minute > 59) {
     throw new Error("जन्म तारीख या समय मान्य नहीं है");
   }
-
-  const offset = Number.isFinite(timezoneMinutes)
-    ? timezoneMinutes
-    : 330;
-
-  return new Date(
-    Date.UTC(year, month - 1, day, hour, minute) -
-    offset * 60000
-  );
+  // Default to India Standard Time when caller doesn't provide a timezone.
+  const offset = Number.isFinite(timezoneMinutes) ? timezoneMinutes : 330;
+  return new Date(Date.UTC(year, month - 1, day, hour, minute) - offset * 60000);
 }
 function diamondSvg(title, ascSign, planets, note) {
   const byHouse = Array.from({length:12},()=>[]);
