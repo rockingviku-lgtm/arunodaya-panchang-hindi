@@ -178,3 +178,39 @@ export function formatPanchangTime(date, offset=330) { return fmtTime(date,offse
 export function formatPanchangDateTime(date, offset=330) { return fmtDateTime(date,offset); }
 export function getPanchakDetails(nowInput=new Date()) { return calculatePanchang({date: new Date(nowInput).toISOString().slice(0,10),lat:26.8467,lon:80.9462,timezoneMinutes:330,place:"लखनऊ"}).then(x=>({active:x.panchak.active,start:x.panchak.start?.toISOString()||null,end:x.panchak.end?.toISOString()||null,currentNakshatra:x.nakshatra.name,calculation:x.calculation,accuracyNote:x.accuracyNote})); }
 export function isPanchakAt(dateInput) { return getSwe().then(swe=>{const date=dateInput instanceof Date?dateInput:new Date(dateInput);const p=positionAt(swe,date);const n=nakInfo(p.moon);return {active:p.moon>=PANCHAK_START,longitude:p.moon,nakshatra:n,panchakNakshatra:p.moon>=PANCHAK_START?n.name:null};}); }
+/**
+ * राहुकाल, गुलिक काल, अभिजीत मुहूर्त और
+ * सूर्योदय/सूर्यास्त के कार्ड के लिए formatted data.
+ */
+export async function getMuhuratCardData({
+  date,
+  lat,
+  lon,
+  timezoneMinutes = 330,
+  place = "चुना गया स्थान"
+}) {
+  const p = await calculatePanchang({
+    date,
+    lat,
+    lon,
+    timezoneMinutes,
+    place
+  });
+
+  const range = (period) => {
+    if (!period?.start || !period?.end) return "उपलब्ध नहीं";
+
+    return `${formatPanchangTime(period.start, timezoneMinutes)} – ${formatPanchangTime(period.end, timezoneMinutes)}`;
+  };
+
+  return {
+    sunrise: formatPanchangTime(p.sunrise, timezoneMinutes),
+    sunset: formatPanchangTime(p.sunset, timezoneMinutes),
+    rahukaal: range(p.periods.rahu),
+    gulikaKaal: range(p.periods.gulika),
+    abhijitMuhurat: range(p.periods.abhijit),
+    yamaganda: range(p.periods.yamaganda),
+    place: p.place,
+    date: p.date
+  };
+}
