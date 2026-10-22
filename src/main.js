@@ -1493,6 +1493,4 @@ document.addEventListener("submit", async (e) => {
   } finally {
     if (submitButton) submitButton.disabled = false;
   }
-});
-
-setDate(state.date);
+}
