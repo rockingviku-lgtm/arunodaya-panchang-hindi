@@ -18,7 +18,7 @@ function navamsaLongitude(longitude) {
   const lon = norm(longitude), sign = signOf(lon), part = Math.min(8, Math.floor(degInSign(lon)/ (30/9)));
   const modality = sign % 3; // 0 movable, 1 fixed, 2 dual
   const start = modality === 0 ? sign : modality === 1 ? (sign + 8) % 12 : (sign + 4) % 12;
-  return norm(start * 30 + (part * (30/9)) + ((degInSign(lon) % (30/9)) * 9));
+  return norm(start * 30 + (part * 30) + ((degInSign(lon) % (30/9)) * 9));
 }
 function diamondSvg(title, ascSign, planets, note) {
   const byHouse = Array.from({length:12},()=>[]);
