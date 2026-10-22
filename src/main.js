@@ -1,12 +1,9 @@
-
-
 import "./style.css";
 import { buildKundli } from "./kundli.js";
 import {
   searchBirthPlaces,
   getBirthTimezoneOffset
 } from "./location.js";
-
 
 const $ = (s) => document.querySelector(s);
 
@@ -327,54 +324,40 @@ function renderKundli() {
               <option value="0">UTC</option>
             </select>
           </label>
-          
-<label class="birthplace-field">
-  जन्म स्थान (शहर या गाँव)
-  <input
-    id="k-place"
-    value="Lucknow"
-    placeholder="जैसे Lucknow, London, New York"
-    autocomplete="off"
-    required
-  >
-</label>
-<div id="k-place-results" class="birthplace-results"></div>
-<p id="k-place-status" class="birthplace-status">
-  जन्मस्थान खोजें और सूची से सही शहर चुनें।
-</p>
-
-          <label>अक्षांश (Latitude)<input id="k-lat" type="number" value="26.8467" min="-90" max="90" step="any" required></label>
-          <label>देशांतर (Longitude)<input id="k-lon" type="number" value="80.9462" min="-180" max="180" step="any" required></label>
+          <label class="birthplace-field">
+            जन्म स्थान (शहर या गाँव)
+            <input id="k-place" placeholder="जैसे Lucknow, London, New York" autocomplete="off" required>
+          </label>
+          <div id="k-place-results" class="birthplace-results"></div>
+          <p id="k-place-status" class="birthplace-status">जन्मस्थान खोजें और सूची से सही शहर चुनें।</p>
+          <label>अक्षांश (Latitude)<input id="k-lat" type="number" min="-90" max="90" step="any" required></label>
+          <label>देशांतर (Longitude)<input id="k-lon" type="number" min="-180" max="180" step="any" required></label>
         </div>
         <button class="btn secondary" type="button" data-action="use-location">📍 मेरी लोकेशन इस्तेमाल करें</button>
         <button class="btn primary" type="submit">कुंडली बनाएँ →</button>
       </form>
       <div id="k-result"></div>
-    </div>
-    
+    </div>`;
+}
+
 let selectedBirthPlace = null;
 let birthPlaceSearchNumber = 0;
 
 function setupBirthPlaceSearch() {
-  const input = document.querySelector("#k-place");
-  const results = document.querySelector("#k-place-results");
-  const status = document.querySelector("#k-place-status");
-
+  const input = $("#k-place");
+  const results = $("#k-place-results");
+  const status = $("#k-place-status");
   if (!input || !results || !status) return;
 
   selectedBirthPlace = null;
-
-  const latInput = document.querySelector("#k-lat");
-  const lonInput = document.querySelector("#k-lon");
+  const latInput = $("#k-lat");
+  const lonInput = $("#k-lon");
 
   input.addEventListener("input", async () => {
     selectedBirthPlace = null;
-
     const query = input.value.trim();
     const searchNumber = ++birthPlaceSearchNumber;
-
     results.replaceChildren();
-
     if (latInput) latInput.value = "";
     if (lonInput) lonInput.value = "";
 
@@ -384,84 +367,51 @@ function setupBirthPlaceSearch() {
     }
 
     status.textContent = "दुनिया भर में स्थान खोजे जा रहे हैं…";
-
     try {
       const places = await searchBirthPlaces(query);
-
       if (searchNumber !== birthPlaceSearchNumber) return;
-
       if (!places.length) {
-        status.textContent =
-          "स्थान नहीं मिला। शहर के साथ देश का नाम भी लिखें।";
+        status.textContent = "स्थान नहीं मिला। शहर के साथ देश का नाम भी लिखें।";
         return;
       }
 
       status.textContent = "सही शहर चुनें:";
-
       for (const place of places) {
         const button = document.createElement("button");
         button.type = "button";
         button.className = "birthplace-option";
-
-        const details = [
-          place.region,
-          place.country
-        ].filter(Boolean).join(", ");
-
-        button.textContent = details
-          ? `${place.name} — ${details}`
-          : place.name;
+        const details = [place.region, place.country].filter(Boolean).join(", ");
+        button.textContent = details ? `${place.name} — ${details}` : place.name;
 
         button.addEventListener("click", () => {
           selectedBirthPlace = place;
-
-          input.value = [
-            place.name,
-            place.region,
-            place.country
-          ].filter(Boolean).filter(
-            (value, index, array) => array.indexOf(value) === index
-          ).join(", ");
-
-          if (latInput) {
-            latInput.value = place.latitude.toFixed(6);
-          }
-
-          if (lonInput) {
-            lonInput.value = place.longitude.toFixed(6);
-          }
-
+          input.value = [place.name, place.region, place.country]
+            .filter(Boolean)
+            .filter((value, index, array) => array.indexOf(value) === index)
+            .join(", ");
+          if (latInput) latInput.value = place.latitude.toFixed(6);
+          if (lonInput) lonInput.value = place.longitude.toFixed(6);
           results.replaceChildren();
+          status.textContent = `चुना गया: ${place.name} · ${place.timezone}`;
 
-          status.textContent =
-            `चुना गया: ${place.name} · ${place.timezone}`;
-
-          const zone = document.querySelector("#k-zone");
-
-          // Save the IANA timezone for the birth-date calculation.
+          const zone = $("#k-zone");
           if (zone) {
             zone.dataset.ianaTimezone = place.timezone;
             zone.dataset.locationSelected = "true";
           }
         });
-
         results.appendChild(button);
       }
     } catch (error) {
       if (searchNumber !== birthPlaceSearchNumber) return;
-
       console.error("Birthplace search failed:", error);
-      status.textContent =
-        "स्थान खोजने में समस्या हुई। इंटरनेट कनेक्शन जाँचकर फिर कोशिश करें।";
+      status.textContent = "स्थान खोजने में समस्या हुई। इंटरनेट कनेक्शन जाँचकर फिर कोशिश करें।";
     }
   });
 }
 
-
-
 function render() {
   const root = $("#page-content");
-
   root.innerHTML = ({
     home: renderHome,
     panchang: renderPanchang,
@@ -470,23 +420,9 @@ function render() {
     kundli: renderKundli
   })[state.active]();
 
-  if (state.active === "kundli") {
-    setupBirthPlaceSearch();
-  }
+  if (state.active === "kundli") setupBirthPlaceSearch();
 
-  document.querySelectorAll(".bottom-nav [data-page]").forEach(b => {
-    b.classList.toggle("selected", b.dataset.page === state.active);
-  });
-}
-({
-    home: renderHome,
-    panchang: renderPanchang,
-    calendar: renderCalendar,
-    muhurat: renderMuhurat,
-    kundli: renderKundli
-  })[state.active]();
-
-  document.querySelectorAll(".bottom-nav [data-page]").forEach(b => {
+  document.querySelectorAll(".bottom-nav [data-page]").forEach((b) => {
     b.classList.toggle("selected", b.dataset.page === state.active);
   });
 }
@@ -500,19 +436,6 @@ function go(page) {
   });
 }
 
-
-function showLocationError(message) {
-  const result = document.querySelector("#k-result");
-
-  if (result) {
-    result.innerHTML =
-      '<div class="result-box error-box">' +
-      '<b>लोकेशन उपलब्ध नहीं</b>' +
-      '<p>' + String(message) + '</p>' +
-      '</div>';
-  }
-}
-
 document.addEventListener("click", async (e) => {
   const page = e.target.closest("[data-page]");
   if (page) {
@@ -522,9 +445,8 @@ document.addEventListener("click", async (e) => {
 
   const dateButton = e.target.closest("[data-date]");
   if (dateButton) {
-    setDate(dateButton.dataset.date);
     state.active = "calendar";
-    render();
+    setDate(dateButton.dataset.date);
     return;
   }
 
@@ -553,14 +475,21 @@ document.addEventListener("click", async (e) => {
   if (action === "show-panchang") {
     const d = $("#p-date").value;
     if (!d) return;
-    setDate(d);
-    $("#p-result").innerHTML = `<div class="result-box"><b>${fmtDate(d)}</b><p>तिथि, नक्षत्र और सूर्योदय के सटीक परिणामों के लिए पंचांग इंजन आवश्यक है।</p></div>`;
+    state.date = d;
+    $("#global-date").value = d;
+    $("#today-date").textContent = fmtDate(d, {
+      day: "numeric", month: "long", year: "numeric"
+    });
+    $("#today-meta").textContent = `${dateFacts(d).weekday} · भारत (IST)`;
+    $("#p-result").innerHTML =
+      `<div class="result-box"><b>${fmtDate(d)}</b><p>तिथि, नक्षत्र और सूर्योदय के सटीक परिणामों के लिए पंचांग इंजन आवश्यक है।</p></div>`;
     return;
   }
 
   if (action === "show-muhurat") {
     const d = $("#m-date").value;
-    $("#m-result").innerHTML = `<div class="result-box"><b>${fmtDate(d)}</b><p>${$("#m-place").value || "चुना गया स्थान"} के लिए प्रमाणित मुहूर्त गणना अभी उपलब्ध नहीं है।</p></div>`;
+    $("#m-result").innerHTML =
+      `<div class="result-box"><b>${fmtDate(d)}</b><p>${$("#m-place").value || "चुना गया स्थान"} के लिए प्रमाणित मुहूर्त गणना अभी उपलब्ध नहीं है।</p></div>`;
     return;
   }
 
@@ -577,32 +506,25 @@ document.addEventListener("click", async (e) => {
       async (position) => {
         const lat = position.coords.latitude;
         const lon = position.coords.longitude;
-
         $("#k-lat").value = lat.toFixed(6);
         $("#k-lon").value = lon.toFixed(6);
+        selectedBirthPlace = null;
 
         try {
           const url = new URL("https://nominatim.openstreetmap.org/reverse");
           url.searchParams.set("format", "jsonv2");
           url.searchParams.set("lat", String(lat));
           url.searchParams.set("lon", String(lon));
-
           const response = await fetch(url.toString());
           if (!response.ok) throw new Error("स्थान का नाम नहीं मिल पाया।");
-
           const data = await response.json();
           const a = data.address || {};
-          const place = [
-            a.city || a.town || a.village || a.county,
-            a.state,
-            a.country
-          ].filter(Boolean);
-
-          if (place.length) {
-            $("#k-place").value = [...new Set(place)].join(", ");
-          }
-
-          alert("GPS coordinates भर दिए गए हैं। यदि जन्मस्थान अलग है, तो सही जन्मस्थान के coordinates भरें।");
+          const place = [a.city || a.town || a.village || a.county, a.state, a.country]
+            .filter(Boolean);
+          if (place.length) $("#k-place").value = [...new Set(place)].join(", ");
+          $("#k-place-status").textContent =
+            "GPS स्थान भरा गया है। कुंडली बनाने के लिए जन्मस्थान को खोजकर सूची से चुनें।";
+          alert("वर्तमान GPS coordinates भर दिए गए हैं। जन्मस्थान अलग है तो उसे खोजकर सूची से चुनें।");
         } catch (err) {
           console.warn("Reverse geocoding failed:", err);
           alert("Coordinates भर दिए गए हैं, लेकिन स्थान का नाम प्राप्त नहीं हुआ।");
@@ -617,7 +539,6 @@ document.addEventListener("click", async (e) => {
           2: "डिवाइस की लोकेशन उपलब्ध नहीं है।",
           3: "लोकेशन प्राप्त करने में समय समाप्त हो गया। फिर कोशिश करें।"
         };
-
         alert(messages[err.code] || "लोकेशन प्राप्त नहीं हो सकी।");
         actionButton.disabled = false;
         actionButton.textContent = "📍 मेरी लोकेशन इस्तेमाल करें";
@@ -636,13 +557,11 @@ $("#global-date").addEventListener("change", (e) => {
 
 document.addEventListener("submit", async (e) => {
   if (e.target.id !== "k-form") return;
-
   e.preventDefault();
 
   const form = e.target;
   const result = $("#k-result");
   const submitButton = form.querySelector('[type="submit"]');
-
   if (submitButton) submitButton.disabled = true;
 
   result.innerHTML = `
@@ -654,16 +573,12 @@ document.addEventListener("submit", async (e) => {
   try {
     const value = $("#k-date").value.trim();
     const match = value.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-
-    if (!match) {
-      throw new Error("जन्म तारीख DD-MM-YYYY में लिखें, जैसे 08-01-2002।");
-    }
+    if (!match) throw new Error("जन्म तारीख DD-MM-YYYY में लिखें, जैसे 08-01-2002।");
 
     const [, dd, mm, yyyy] = match;
     const day = Number(dd);
     const month = Number(mm);
     const year = Number(yyyy);
-
     const check = new Date(Date.UTC(year, month - 1, day));
 
     if (
@@ -675,37 +590,32 @@ document.addEventListener("submit", async (e) => {
     }
 
     const time = $("#k-time").value;
-    if (!/^\d{2}:\d{2}$/.test(time)) {
-      throw new Error("जन्म समय सही भरें।");
+    if (!/^\d{2}:\d{2}$/.test(time)) throw new Error("जन्म समय सही भरें।");
+
+    if (!selectedBirthPlace) {
+      throw new Error("जन्मस्थान लिखकर खोजें और सूची से सही शहर चुनें।");
     }
 
-    const lat = Number($("#k-lat").value);
-    const lon = Number($("#k-lon").value);
+    const timezoneMinutes = getBirthTimezoneOffset(
+      `${yyyy}-${mm}-${dd}`,
+      time,
+      selectedBirthPlace.timezone
+    );
+    const lat = Number(selectedBirthPlace.latitude);
+    const lon = Number(selectedBirthPlace.longitude);
 
     if (
       !Number.isFinite(lat) || lat < -90 || lat > 90 ||
       !Number.isFinite(lon) || lon < -180 || lon > 180
     ) {
-      throw new Error("अक्षांश या देशांतर सही भरें।");
+      throw new Error("चुने गए स्थान के अक्षांश या देशांतर सही नहीं हैं।");
     }
-if (!selectedBirthPlace) {
-  throw new Error("जन्मस्थान खोजकर सूची से सही शहर चुनें।");
-}
-
-const timezoneMinutes = getBirthTimezoneOffset(
-  `${yyyy}-${mm}-${dd}`,
-  time,
-  selectedBirthPlace.timezone
-);
-
-const lat = selectedBirthPlace.latitude;
-const lon = selectedBirthPlace.longitude;
 
     const payload = {
       name: $("#k-name").value.trim(),
       date: `${yyyy}-${mm}-${dd}`,
       time,
-      timezoneMinutes: timezoneMinutes,
+      timezoneMinutes,
       lat,
       lon
     };
@@ -717,7 +627,6 @@ const lon = selectedBirthPlace.longitude;
       </div>`;
 
     let timeoutId;
-
     const timeout = new Promise((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error(
@@ -727,10 +636,7 @@ const lon = selectedBirthPlace.longitude;
     });
 
     try {
-      const html = await Promise.race([
-        buildKundli(payload),
-        timeout
-      ]);
+      const html = await Promise.race([buildKundli(payload), timeout]);
       result.innerHTML = html;
     } finally {
       clearTimeout(timeoutId);
