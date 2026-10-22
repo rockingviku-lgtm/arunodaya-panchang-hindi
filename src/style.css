@@ -31,3 +31,6 @@
 .calculation-summary p{color:var(--muted,#b9bfd0);font-size:.84rem}
 .error-box{border-color:#b85b5b!important}
 @media(max-width:760px){.kundli-chart-grid{grid-template-columns:1fr}.kundli-chart-card{max-width:440px;width:100%;margin:0 auto}.kundli-chart-wrap{max-width:320px}.kundli-chart-card h3{font-size:1.05rem}}
+
+/* Panchang calculation result cards */
+.summary-pill{display:flex;flex-direction:column;gap:4px;padding:12px;background:#111d31;border:1px solid #3b4960;border-radius:12px;min-width:0;color:#eef3ff}.summary-pill small{font-size:10px;color:#aab8ce}.summary-pill b{font-size:13px;overflow-wrap:anywhere}.summary-pill span{font-size:10px;color:#d7c69d;overflow-wrap:anywhere}.result-box .facts-grid{margin-top:14px;gap:9px}.result-box .summary-pill{background:#111d31}

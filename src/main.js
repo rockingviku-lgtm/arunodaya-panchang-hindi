@@ -1,5 +1,6 @@
 import "./style.css";
 import { buildKundli } from "./kundli.js";
+import { calculatePanchang, geocodePanchangPlace, formatPanchangTime, formatPanchangDateTime } from "./panchak-engine.js";
 import {
   searchBirthPlaces,
   getBirthTimezoneOffset
@@ -212,10 +213,10 @@ function renderHome() {
       <div><div class="eyebrow muted">आपके लिए</div><h2>आज के मुख्य विवरण</h2></div>
     </div>
     <div class="facts-grid">
-      ${fact("तिथि", "गणना उपलब्ध होने पर", "◷")}
-      ${fact("नक्षत्र", "गणना उपलब्ध होने पर", "✦")}
-      ${fact("योग", "गणना उपलब्ध होने पर", "✧")}
-      ${fact("करण", "गणना उपलब्ध होने पर", "☼")}
+      ${fact("तिथि", "पंचांग खोलें", "◷")}
+      ${fact("नक्षत्र", "पंचांग खोलें", "✦")}
+      ${fact("योग", "पंचांग खोलें", "✧")}
+      ${fact("करण", "पंचांग खोलें", "☼")}
     </div>`;
 }
 
@@ -472,24 +473,44 @@ document.addEventListener("click", async (e) => {
     return;
   }
 
-  if (action === "show-panchang") {
-    const d = $("#p-date").value;
-    if (!d) return;
-    state.date = d;
-    $("#global-date").value = d;
-    $("#today-date").textContent = fmtDate(d, {
-      day: "numeric", month: "long", year: "numeric"
-    });
-    $("#today-meta").textContent = `${dateFacts(d).weekday} · भारत (IST)`;
-    $("#p-result").innerHTML =
-      `<div class="result-box"><b>${fmtDate(d)}</b><p>तिथि, नक्षत्र और सूर्योदय के सटीक परिणामों के लिए पंचांग इंजन आवश्यक है।</p></div>`;
-    return;
-  }
-
-  if (action === "show-muhurat") {
-    const d = $("#m-date").value;
-    $("#m-result").innerHTML =
-      `<div class="result-box"><b>${fmtDate(d)}</b><p>${$("#m-place").value || "चुना गया स्थान"} के लिए प्रमाणित मुहूर्त गणना अभी उपलब्ध नहीं है।</p></div>`;
+  if (action === "show-panchang" || action === "show-muhurat") {
+    const isPanchang = action === "show-panchang";
+    const d = $(isPanchang ? "#p-date" : "#m-date").value;
+    const placeInput = $(isPanchang ? "#p-place" : "#m-place");
+    const result = $(isPanchang ? "#p-result" : "#m-result");
+    const zoneEl = isPanchang ? $("#p-zone") : null;
+    const offset = zoneEl ? Number(zoneEl.value) : 330;
+    if (!d) { result.innerHTML = `<div class="result-box"><p>कृपया तारीख चुनें।</p></div>`; return; }
+    if (actionButton.disabled) return;
+    actionButton.disabled = true;
+    const originalLabel = actionButton.textContent;
+    actionButton.textContent = "गणना हो रही है…";
+    result.innerHTML = `<div class="result-box"><p>खगोलीय गणना और स्थान खोजे जा रहे हैं…</p></div>`;
+    try {
+      const place = await geocodePanchangPlace(placeInput.value || "Lucknow, India");
+      const data = await calculatePanchang({ date: d, lat: place.lat, lon: place.lon, timezoneMinutes: offset, place: place.name });
+      const time = value => formatPanchangTime(value, offset);
+      const dateTime = value => formatPanchangDateTime(value, offset);
+      const item = (label, value, end) => `<div class="summary-pill"><small>${label}</small><b>${value}</b>${end ? `<span>समाप्ति: ${dateTime(end)}</span>` : ""}</div>`;
+      const period = (label, value) => `<div class="timing-item"><span class="timing-icon">◷</span><div><b>${label}</b><small>${value ? `${time(value.start)} – ${time(value.end)}` : "इस तारीख के लिए गणना उपलब्ध नहीं"}</small></div></div>`;
+      const panchakText = data.panchak.active ? `पंचक चल रहा है${data.panchak.end ? ` · समाप्ति ${dateTime(data.panchak.end)}` : ""}` : `पंचक नहीं चल रहा${data.panchak.start ? ` · अगली शुरुआत ${dateTime(data.panchak.start)}` : ""}`;
+      const common = `<div class="result-box"><h3>${fmtDate(d)}</h3><p>${data.place} · ${data.weekday}</p><div class="facts-grid">${item("तिथि", `${data.tithi.name} (${data.tithi.paksha})`, data.tithi.end)}${item("नक्षत्र", `${data.nakshatra.name} · पद ${data.nakshatra.pada}`, data.nakshatra.end)}${item("योग", data.yoga.name, data.yoga.end)}${item("करण", data.karana.name, data.karana.end)}${item("सूर्योदय", time(data.sunrise))}${item("सूर्यास्त", time(data.sunset))}</div><p><b>पंचक:</b> ${panchakText}</p><p class="muted">${data.accuracyNote}</p></div>`;
+      if (isPanchang) {
+        result.innerHTML = common;
+        state.date = d;
+        $("#global-date").value = d;
+        $("#today-date").textContent = fmtDate(d, { day: "numeric", month: "long", year: "numeric" });
+        $("#today-meta").textContent = `${data.weekday} · ${data.place}`;
+      } else {
+        result.innerHTML = `${common}<div class="panel"><h3>दिन के शुभ / अशुभ समय</h3>${period("राहुकाल",data.periods.rahu)}${period("गुलिक काल",data.periods.gulika)}${period("यमगण्ड",data.periods.yamaganda)}${period("अभिजीत मुहूर्त",data.periods.abhijit)}<p class="muted">ये समय सूर्योदय-सूर्यास्त से निकाले गए हैं। स्थानीय परंपरा के अनुसार मुहूर्त में अंतर हो सकता है।</p></div>`;
+      }
+    } catch (error) {
+      console.error("Panchang calculation failed:", error);
+      result.innerHTML = `<div class="result-box"><b>गणना पूरी नहीं हो सकी</b><p>${String(error?.message || "अज्ञात त्रुटि").replace(/[<>]/g, "")}</p><p>इंटरनेट कनेक्शन और शहर का नाम जाँचें, फिर दोबारा कोशिश करें।</p></div>`;
+    } finally {
+      actionButton.disabled = false;
+      actionButton.textContent = originalLabel;
+    }
     return;
   }
 
