@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="hi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#172554" />
+    <meta name="description" content="Arunodaya Panchang — जन्म विवरण से वैदिक कुंडली की ग्रह स्थिति देखें।" />
+    <title>Arunodaya Panchang | जन्म कुंडली</title>
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand-mark">ॐ</div>
+        <div><div class="brand">Arunodaya Panchang</div><div class="tagline">वैदिक ज्योतिष • जन्म कुंडली</div></div>
+      </header>
+      <main class="wrap">
+        <section class="intro">
+          <p class="eyebrow">जन्म कुंडली गणना</p>
+          <h1>अपनी जन्म कुंडली देखें</h1>
+          <p>जन्म की तारीख, समय और स्थान भरें। गणना आपके ब्राउज़र में होती है।</p>
+        </section>
+        <form id="kundali-form" class="panel">
+          <div class="fields">
+            <label>पूरा नाम (वैकल्पिक)<input id="person-name" type="text" placeholder="नाम लिखें" autocomplete="name" /></label>
+            <label>जन्म तारीख<input id="birth-date" type="date" required /></label>
+            <label>जन्म समय<input id="birth-time" type="time" value="12:00" required /></label>
+            <label>समय क्षेत्र (UTC offset)<select id="utc-offset" required>
+              <option value="5.5" selected>भारत (UTC +05:30)</option>
+              <option value="0">UTC ±00:00</option>
+              <option value="-5">UTC -05:00</option>
+              <option value="-4">UTC -04:00</option>
+              <option value="1">UTC +01:00</option>
+              <option value="2">UTC +02:00</option>
+              <option value="8">UTC +08:00</option>
+              <option value="9">UTC +09:00</option>
+              <option value="10">UTC +10:00</option>
+            </select></label>
+            <label>जन्म स्थान<input id="place" type="text" placeholder="जैसे Lucknow, India" required /></label>
+            <label>अक्षांश (Latitude)<input id="latitude" type="number" min="-90" max="90" step="any" value="26.8467" required /></label>
+            <label>देशांतर (Longitude)<input id="longitude" type="number" min="-180" max="180" step="any" value="80.9462" required /></label>
+          </div>
+          <p class="hint">स्थान के अक्षांश/देशांतर सही भरें। शहर का नाम अपने-आप coordinates में नहीं बदलेगा।</p>
+          <button id="calculate-btn" type="submit">कुंडली की गणना करें</button>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </form>
+        <section id="results" class="results" hidden>
+          <div class="result-heading"><div><p class="eyebrow">गणना परिणाम</p><h2 id="result-title">ग्रहों की स्थिति</h2></div><button id="print-btn" class="secondary" type="button">Print / PDF</button></div>
+          <div class="summary-grid" id="summary"></div>
+          <div class="table-scroll"><table><thead><tr><th>ग्रह</th><th>राशि</th><th>अंश</th><th>गति</th><th>नवांश</th><th>वर्गोत्तम</th></tr></thead><tbody id="planet-rows"></tbody></table></div>
+          <p class="hint">वक्री स्थिति longitude speed के आधार पर दिखाई जाती है। वर्गोत्तम का अर्थ यहाँ D1 और D9 में एक ही राशि होना है।</p>
+          <p class="disclaimer">यह गणना Moshier ephemeris और Lahiri ayanamsha सेटिंग पर आधारित प्रारंभिक परिणाम है। किसी महत्वपूर्ण ज्योतिषीय निर्णय से पहले स्थापित पंचांग/एपhemeris से मिलान करें।</p>
+        </section>
+        <footer>© <span id="year"></span> Arunodaya Panchang · गणना आपके ब्राउज़र में</footer>
+      </main>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
