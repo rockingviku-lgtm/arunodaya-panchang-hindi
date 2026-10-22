@@ -1,50 +1,17 @@
 <!doctype html>
 <html lang="hi">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#172554">
-<meta name="description" content="Arunodaya Panchang — कस्टम तारीख के साथ जन्म कुंडली और पंचांग गणना।">
-<title>Arunodaya Panchang | जन्म कुंडली और पंचांग</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#10192f" />
+  <meta name="description" content="Arunodaya Panchang — दैनिक पंचांग, हिंदू कैलेंडर, मुहूर्त और जन्म कुंडली के लिए मोबाइल-फ्रेंडली वैदिक कैलेंडर।" />
+  <title>Arunodaya Panchang — दैनिक पंचांग और हिंदू कैलेंडर</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
 <body>
-<div id="app">
-<header class="topbar"><div class="brand-mark">ॐ</div><div><div class="brand">Arunodaya Panchang</div><div class="tagline">वैदिक ज्योतिष • जन्म कुंडली • पंचांग</div></div></header>
-<main class="wrap">
-<section class="intro"><p class="eyebrow">कस्टम तारीख चुनें</p><h1>जन्म कुंडली और पंचांग</h1><p>कैलेंडर से कोई भी तारीख चुनें। जन्म कुंडली के लिए जन्म विवरण और पंचांग के लिए तारीख, समय व स्थान के coordinates भरें।</p></section>
-<section class="panel">
-<h2>जन्म कुंडली / Birth Chart</h2>
-<form id="kundali-form">
-<div class="fields">
-<label>पूरा नाम (वैकल्पिक)<input id="person-name" type="text" placeholder="नाम लिखें" autocomplete="name"></label>
-<label>जन्म तारीख<input id="birth-date" type="date" required></label>
-<label>जन्म समय<input id="birth-time" type="time" value="12:00" required></label>
-<label>समय क्षेत्र<select id="utc-offset" required><option value="5.5" selected>भारत (UTC +05:30)</option><option value="0">UTC ±00:00</option><option value="-5">UTC -05:00</option><option value="-4">UTC -04:00</option><option value="1">UTC +01:00</option><option value="2">UTC +02:00</option><option value="8">UTC +08:00</option><option value="9">UTC +09:00</option><option value="10">UTC +10:00</option></select></label>
-<label>जन्म स्थान<input id="place" type="text" value="Lucknow, India" required></label>
-<label>अक्षांश (Latitude)<input id="latitude" type="number" min="-90" max="90" step="any" value="26.8467" required></label>
-<label>देशांतर (Longitude)<input id="longitude" type="number" min="-180" max="180" step="any" value="80.9462" required></label>
-</div>
-<p class="hint">तारीख कैलेंडर से चुनें। शहर का नाम अपने-आप coordinates में नहीं बदलेगा; सही अक्षांश और देशांतर भरें।</p>
-<button id="calculate-btn" type="submit">कुंडली की गणना करें</button><p id="status" class="status" role="status" aria-live="polite"></p>
-</form>
-</section>
-<section id="results" class="results" hidden><div class="result-heading"><div><p class="eyebrow">गणना परिणाम</p><h2 id="result-title">जन्म कुंडली</h2></div><button id="print-btn" class="secondary" type="button">Print / PDF</button></div><div class="summary-grid" id="summary"></div><div class="table-scroll"><table><thead><tr><th>ग्रह</th><th>राशि</th><th>अंश</th><th>गति</th><th>नवांश</th><th>वर्गोत्तम</th></tr></thead><tbody id="planet-rows"></tbody></table></div><p class="hint">वर्गोत्तम का अर्थ यहाँ D1 और D9 में एक ही राशि होना है। परिणाम को किसी विश्वसनीय पंचांग से मिलाएँ।</p></section>
-<section class="panel">
-<h2>किसी भी तारीख का पंचांग / Panchang</h2>
-<form id="panchang-form">
-<div class="fields">
-<label>पंचांग की तारीख<input id="panchang-date" type="date" required></label>
-<label>समय<input id="panchang-time" type="time" value="12:00" required></label>
-<label>समय क्षेत्र<select id="panchang-offset" required><option value="5.5" selected>भारत (UTC +05:30)</option><option value="0">UTC ±00:00</option><option value="-5">UTC -05:00</option><option value="-4">UTC -04:00</option><option value="1">UTC +01:00</option><option value="2">UTC +02:00</option><option value="8">UTC +08:00</option><option value="9">UTC +09:00</option><option value="10">UTC +10:00</option></select></label>
-<label>अक्षांश (Latitude)<input id="panchang-lat" type="number" min="-90" max="90" step="any" value="26.8467" required></label>
-<label>देशांतर (Longitude)<input id="panchang-lon" type="number" min="-180" max="180" step="any" value="80.9462" required></label>
-</div>
-<p class="hint">यह प्रारंभिक खगोलीय अनुमान है; प्रमाणित स्थानीय पंचांग के लिए सूर्योदय और स्थानीय परंपरा की गणना भी आवश्यक है।</p>
-<button id="panchang-btn" type="submit">चुनी तारीख का पंचांग देखें</button><p id="panchang-status" class="status" role="status" aria-live="polite"></p>
-</form>
-</section>
-<section id="panchang-results" class="results" hidden><div class="result-heading"><div><p class="eyebrow">पंचांग परिणाम</p><h2>चुनी हुई तारीख</h2></div><button id="panchang-print" class="secondary" type="button">Print / PDF</button></div></section>
-<footer>© <span id="year"></span> Arunodaya Panchang · ब्राउज़र में गणना</footer>
-</main>
-</div>
-<script type="module" src="/src/main.js"></script>
-</body></html>
+  <div id="app"></div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

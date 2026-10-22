@@ -1,15 +1,27 @@
-# Arunodaya Panchang — custom date build
+# Arunodaya Panchang
 
-Mobile-first Vite site with calendar date pickers for birth chart and date-based panchang estimate.
+Mobile-first Vite website starter for a modern Hindi Panchang experience.
+
+## Features in this starter
+- Home page with daily Panchang entry point
+- Date selector and month calendar
+- Panchang, Muhurat and Kundli form pages
+- Responsive dark navy and gold theme
+- No backend/API keys required for the starter UI
+
+## Important accuracy note
+This starter is a user-interface and navigation foundation. It does **not** calculate verified tithi/nakshatra transitions, sunrise/sunset, Rahu Kaal, auspicious timings, planetary positions, Lagna, Navamsa, retrograde or Vargottama. Do not present placeholders as real astrological calculations. Connect a suitable, tested astronomical/Panchang engine and verify its licensing before production use.
+
+## Build
+```bash
+npm install
+npm run build
+```
+Vite output directory: `dist`
 
 ## Cloudflare Pages
-- Framework preset: None / Other / Vite (if listed)
+- Framework preset: Vite (or None if required)
 - Build command: `npm run build`
-- Output directory: `dist`
-- Root directory: `/`
-
-## Important
-- Keep paths lowercase: `src/main.js` and `src/style.css`.
-- Panchang output is an approximate snapshot at the selected time, not a certified daily Panchang. Accurate tithi/nakshatra boundary times require location-specific sunrise and transition calculations.
-- Birth chart results depend on correct local time, UTC offset and coordinates.
-- Review `@swisseph/browser` AGPL-3.0 license before commercial/closed-source use.
+- Build output directory: `dist`
+- Root directory: `/` or blank
+- Ensure the path is exactly `src/main.js` and `src/style.css` (lowercase `src`).
