@@ -1,206 +1,130 @@
 
-/**
- * Arunodaya Panchang — Muhurat Calculator
- * File: src/muhurat.js
- *
- * Input:
- * date: "YYYY-MM-DD"
- * sunrise: "HH:mm"
- * sunset: "HH:mm"
- *
- * Times must be local times for the selected location.
- */
+import {
+  formatPanchangTime,
+  formatPanchangDateTime
+} from "./panchak-engine.js";
+import {
+  renderMuhuratResult,
+  updateMuhuratCards
+} from "./muhurat.js";
 
-const RAHU_KAAL_PERIOD = {
-  0: 8, // Sunday
-  1: 2, // Monday
-  2: 7, // Tuesday
-  3: 5, // Wednesday
-  4: 6, // Thursday
-  5: 4, // Friday
-  6: 3  // Saturday
-};
+export function renderMuhuratResult(data, date, timezoneMinutes = 330) {
+  const time = (value) =>
+    value ? formatPanchangTime(value, timezoneMinutes) : "उपलब्ध नहीं";
 
-const GULIKA_KAAL_PERIOD = {
-  0: 7, // Sunday
-  1: 6, // Monday
-  2: 5, // Tuesday
-  3: 4, // Wednesday
-  4: 3, // Thursday
-  5: 2, // Friday
-  6: 1  // Saturday
-};
+  const dateTime = (value) =>
+    value ? formatPanchangDateTime(value, timezoneMinutes) : "";
 
-const DAY_NAMES_HI = [
-  "रविवार",
-  "सोमवार",
-  "मंगलवार",
-  "बुधवार",
-  "गुरुवार",
-  "शुक्रवार",
-  "शनिवार"
-];
+  const safe = (value) =>
+    String(value ?? "").replace(/[&<>"']/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[char]);
 
-function timeToMinutes(value) {
-  if (typeof value !== "string") {
-    throw new Error("समय HH:mm प्रारूप में दें।");
-  }
+  const period = (label, value) => `
+    <div class="timing-item">
+      <span class="timing-icon">◷</span>
+      <div>
+        <b>${safe(label)}</b>
+        <small>${
+          value
+            ? `${time(value.start)} – ${time(value.end)}`
+            : "इस तारीख के लिए गणना उपलब्ध नहीं"
+        }</small>
+      </div>
+    </div>`;
 
-  const match = value.trim().match(/^(\d{1,2}):(\d{2})$/);
+  const panchak = data.panchak?.active
+    ? `पंचक चल रहा है${
+        data.panchak.end
+          ? ` · समाप्ति ${dateTime(data.panchak.end)}`
+          : ""
+      }`
+    : `पंचक नहीं चल रहा${
+        data.panchak?.start
+          ? ` · अगली शुरुआत ${dateTime(data.panchak.start)}`
+          : ""
+      }`;
 
-  if (!match) {
-    throw new Error("समय का प्रारूप HH:mm होना चाहिए।");
-  }
+  return `
+    <div class="result-box">
+      <h3>${safe(date)}</h3>
+      <p>${safe(data.place)} · ${safe(data.weekday)}</p>
 
-  const hours = Number(match[1]);
-  const minutes = Number(match[2]);
+      <div class="facts-grid">
+        <div class="summary-pill">
+          <small>सूर्योदय</small><b>${time(data.sunrise)}</b>
+        </div>
+        <div class="summary-pill">
+          <small>सूर्यास्त</small><b>${time(data.sunset)}</b>
+        </div>
+      </div>
 
-  if (hours > 23 || minutes > 59) {
-    throw new Error("समय मान्य नहीं है।");
-  }
+      <p><b>पंचक:</b> ${safe(panchak)}</p>
+      <p class="muted">${safe(data.accuracyNote)}</p>
+    </div>
 
-  return hours * 60 + minutes;
+    <div class="panel">
+      <h3>दिन के शुभ / अशुभ समय</h3>
+      ${period("राहुकाल", data.periods?.rahu)}
+      ${period("गुलिक काल", data.periods?.gulika)}
+      ${period("यमगण्ड", data.periods?.yamaganda)}
+      ${period("अभिजीत मुहूर्त", data.periods?.abhijit)}
+
+      <p class="muted">
+        समय चुनी गई तारीख, स्थान और सूर्योदय-सूर्यास्त की गणना पर निर्भर हैं।
+      </p>
+    </div>
+  `;
 }
 
-function minutesToTime(totalMinutes) {
-  const normalized =
-    ((Math.round(totalMinutes) % 1440) + 1440) % 1440;
-
-  const hours = Math.floor(normalized / 60);
-  const minutes = normalized % 60;
-
-  return (
-    String(hours).padStart(2, "0") +
-    ":" +
-    String(minutes).padStart(2, "0")
+export function updateMuhuratCards(data, timezoneMinutes = 330) {
+  const cards = document.querySelectorAll(
+    "#page-content .timing-list .timing-item"
   );
-}
 
-function getLocalDate(dateValue) {
-  if (dateValue instanceof Date) {
-    if (Number.isNaN(dateValue.getTime())) {
-      throw new Error("तारीख मान्य नहीं है।");
+  const values = [
+    data.periods?.rahu,
+    data.periods?.gulika,
+    data.periods?.abhijit
+  ];
+
+  values.forEach((value, index) => {
+    const card = cards[index];
+    if (!card) return;
+
+    const small = card.querySelector("small");
+    const status = card.querySelector(".timing-status");
+
+    if (small) {
+      small.textContent = value
+        ? `${formatPanchangTime(value.start, timezoneMinutes)} – ${formatPanchangTime(value.end, timezoneMinutes)}`
+        : "गणना उपलब्ध नहीं";
     }
 
-    return new Date(
-      dateValue.getFullYear(),
-      dateValue.getMonth(),
-      dateValue.getDate()
-    );
+    if (status) {
+      status.textContent = value ? "गणना पूरी" : "उपलब्ध नहीं";
+    }
+  });
+
+  const sunCard = cards[3];
+
+  if (sunCard) {
+    const small = sunCard.querySelector("small");
+    const status = sunCard.querySelector(".timing-status");
+
+    if (small) {
+      small.textContent =
+        `सूर्योदय ${formatPanchangTime(data.sunrise, timezoneMinutes)} · ` +
+        `सूर्यास्त ${formatPanchangTime(data.sunset, timezoneMinutes)}`;
+    }
+
+    if (status) {
+      status.textContent =
+        data.sunrise && data.sunset ? "गणना पूरी" : "उपलब्ध नहीं";
+    }
   }
-
-  if (typeof dateValue !== "string") {
-    throw new Error("तारीख YYYY-MM-DD प्रारूप में दें।");
-  }
-
-  const match = dateValue.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-
-  if (!match) {
-    throw new Error("तारीख YYYY-MM-DD प्रारूप में होनी चाहिए।");
-  }
-
-  const year = Number(match[1]);
-  const month = Number(match[2]);
-  const day = Number(match[3]);
-
-  const date = new Date(year, month - 1, day);
-
-  if (
-    date.getFullYear() !== year ||
-    date.getMonth() !== month - 1 ||
-    date.getDate() !== day
-  ) {
-    throw new Error("दी गई तारीख मान्य नहीं है।");
-  }
-
-  return date;
-}
-
-function makePeriod(startMinutes, endMinutes) {
-  return {
-    start: minutesToTime(startMinutes),
-    end: minutesToTime(endMinutes),
-    startMinutes: Math.round(startMinutes),
-    endMinutes: Math.round(endMinutes)
-  };
-}
-
-/**
- * Calculate daytime Rahu Kaal, Gulika Kaal and Abhijit Muhurat.
- *
- * Note:
- * This function calculates from the sunrise and sunset supplied
- * by the caller. It does not calculate astronomical sunrise/sunset.
- */
-export function calculateMuhurat({
-  date,
-  sunrise,
-  sunset
-}) {
-  const localDate = getLocalDate(date);
-  const weekday = localDate.getDay();
-
-  const sunriseMinutes = timeToMinutes(sunrise);
-  const sunsetMinutes = timeToMinutes(sunset);
-
-  if (sunsetMinutes <= sunriseMinutes) {
-    throw new Error(
-      "सूर्यास्त का समय सूर्योदय के समय से बाद का होना चाहिए।"
-    );
-  }
-
-  const daytimeMinutes = sunsetMinutes - sunriseMinutes;
-  const eighth = daytimeMinutes / 8;
-
-  const rahuIndex = RAHU_KAAL_PERIOD[weekday];
-  const gulikaIndex = GULIKA_KAAL_PERIOD[weekday];
-
-  const rahuKaal = makePeriod(
-    sunriseMinutes + (rahuIndex - 1) * eighth,
-    sunriseMinutes + rahuIndex * eighth
-  );
-
-  const gulikaKaal = makePeriod(
-    sunriseMinutes + (gulikaIndex - 1) * eighth,
-    sunriseMinutes + gulikaIndex * eighth
-  );
-
-  // Approximation: 48 minutes centered on the midpoint
-  // of the supplied sunrise and sunset.
-  const daylightMidpoint =
-    sunriseMinutes + daytimeMinutes / 2;
-
-  const abhijitMuhurat = makePeriod(
-    daylightMidpoint - 24,
-    daylightMidpoint + 24
-  );
-
-  return {
-    date:
-      localDate.getFullYear() +
-      "-" +
-      String(localDate.getMonth() + 1).padStart(2, "0") +
-      "-" +
-      String(localDate.getDate()).padStart(2, "0"),
-
-    weekday: DAY_NAMES_HI[weekday],
-
-    sunrise: minutesToTime(sunriseMinutes),
-    sunset: minutesToTime(sunsetMinutes),
-
-    rahuKaal,
-    gulikaKaal,
-    abhijitMuhurat
-  };
-}
-
-/**
- * Format a calculated period for a Hindi UI.
- */
-export function formatMuhuratPeriod(period) {
-  if (!period || !period.start || !period.end) {
-    return "समय उपलब्ध नहीं";
-  }
-
-  return `${period.start} – ${period.end}`;
 }
