@@ -6,6 +6,9 @@ const PLANETS = [
   ["गु", Planet.Jupiter], ["शु", Planet.Venus], ["श", Planet.Saturn]
 ];
 const HOUSE_CENTERS = [[150,45],[78,38],[38,78],[45,150],[38,222],[78,262],[150,255],[222,262],[262,222],[255,150],[262,78],[222,38]];
+const NAKSHATRAS = ["अश्विनी","भरणी","कृत्तिका","रोहिणी","मृगशिरा","आर्द्रा","पुनर्वसु","पुष्य","आश्लेषा","मघा","पूर्वा फाल्गुनी","उत्तरा फाल्गुनी","हस्त","चित्रा","स्वाती","विशाखा","अनुराधा","ज्येष्ठा","मूल","पूर्वाषाढ़ा","उत्तराषाढ़ा","श्रवण","धनिष्ठा","शतभिषा","पूर्वाभाद्रपद","उत्तराभाद्रपद","रेवती"];
+const DASHA_LORDS = [["केतु",7],["शुक्र",20],["सूर्य",6],["चंद्र",10],["मंगल",7],["राहु",18],["गुरु",16],["शनि",19],["बुध",17]];
+const NAK_SPAN = 360 / 27;
 const norm = n => ((n % 360) + 360) % 360;
 const signOf = lon => Math.floor(norm(lon) / 30);
 const degInSign = lon => norm(lon) % 30;
@@ -14,6 +17,44 @@ const fmtDeg = lon => {
   const d = degInSign(lon), deg = Math.floor(d), min = Math.floor((d-deg)*60);
   return `${deg}°${String(min).padStart(2,"0")}′`;
 };
+function nakshatraInfo(longitude) {
+  const lon = norm(longitude);
+  const index = Math.floor(lon / NAK_SPAN);
+  const fraction = (lon - index * NAK_SPAN) / NAK_SPAN;
+  return { name: NAKSHATRAS[index], pada: Math.min(4, Math.floor(fraction * 4) + 1), index, fraction };
+}
+function dateAtYears(start, years) {
+  return new Date(start.getTime() + years * 365.2425 * 86400000);
+}
+function fmtDashaDate(date) {
+  return new Intl.DateTimeFormat("hi-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" }).format(date);
+}
+function vimshottariDasha(moonLongitude, birthUtc) {
+  const nak = nakshatraInfo(moonLongitude);
+  const firstIndex = nak.index % 9;
+  const firstBalance = DASHA_LORDS[firstIndex][1] * (1 - nak.fraction);
+  const periods = [];
+  let cursor = new Date(birthUtc);
+  for (let i = 0; i < 18; i++) {
+    const idx = (firstIndex + i) % 9;
+    const years = i === 0 ? firstBalance : DASHA_LORDS[idx][1];
+    const end = dateAtYears(cursor, years);
+    periods.push({ lord: DASHA_LORDS[idx][0], start: new Date(cursor), end, years });
+    cursor = end;
+  }
+  const now = new Date();
+  const maha = periods.find(x => now >= x.start && now < x.end) || periods[periods.length - 1];
+  let subCursor = new Date(maha.start), antar = null;
+  const mahaIndex = DASHA_LORDS.findIndex(x => x[0] === maha.lord);
+  for (let j = 0; j < 9; j++) {
+    const idx = (mahaIndex + j) % 9;
+    const years = maha.years * DASHA_LORDS[idx][1] / 120;
+    const end = dateAtYears(subCursor, years);
+    if (now >= subCursor && now < end) antar = { lord: DASHA_LORDS[idx][0], start: subCursor, end };
+    subCursor = end;
+  }
+  return { nakshatra: nak.name, pada: nak.pada, balanceYears: firstBalance, mahadasha: maha, antardasha: antar, timeline: periods.slice(0, 9) };
+}
 function navamsaLongitude(longitude) {
   // Each 3°20′ segment maps to one Navamsa sign. Keep the within-segment
   // position scaled by 9 so the D9 longitude retains its degree within sign.
@@ -61,7 +102,11 @@ function diamondSvg(title, ascSign, planets, note) {
   ${centers}</svg></div><p class="chart-note">${note}</p></article>`;
 }
 function planetTable(planets) {
- return `<div class="panel planet-table-panel"><h3>ग्रहों की स्थिति (निरयन / लाहिरी)</h3><div class="planet-table-scroll"><table class="planet-table"><thead><tr><th>ग्रह</th><th>राशि</th><th>अंश</th><th>गति</th></tr></thead><tbody>${planets.map(p=>`<tr><td>${p.short} <span>${p.full}</span></td><td>${SIGN_NAMES[signOf(p.longitude)]}</td><td>${fmtDeg(p.longitude)}</td><td>${p.retrograde?"वक्री":"मार्गी"}</td></tr>`).join("")}</tbody></table></div></div>`;
+ return `<div class="panel planet-table-panel"><h3>ग्रहों की स्थिति (निरयन / लाहिरी)</h3><div class="planet-table-scroll"><table class="planet-table"><thead><tr><th>ग्रह</th><th>राशि</th><th>अंश</th><th>नक्षत्र</th><th>पद</th><th>गति</th></tr></thead><tbody>${planets.map(p=>{const n=nakshatraInfo(p.longitude);return `<tr><td>${p.short} <span>${p.full}</span></td><td>${SIGN_NAMES[signOf(p.longitude)]}</td><td>${fmtDeg(p.longitude)}</td><td>${n.name}</td><td>${n.pada}</td><td>${p.retrograde?"वक्री":"मार्गी"}</td></tr>`}).join("")}</tbody></table></div></div>`;
+}
+function dashaPanel(dasha) {
+ const maha = dasha.mahadasha, antar = dasha.antardasha;
+ return `<div class="panel calculation-summary"><h3>विंशोत्तरी दशा</h3><div class="summary-pills"><span>जन्म नक्षत्र: ${dasha.nakshatra} (पद ${dasha.pada})</span><span>जन्म के समय शेष दशा: ${dasha.balanceYears.toFixed(2)} वर्ष</span><span>वर्तमान महादशा: ${maha.lord}</span><span>वर्तमान अंतरदशा: ${antar ? antar.lord : "गणना उपलब्ध नहीं"}</span></div><p>महादशा: ${fmtDashaDate(maha.start)} – ${fmtDashaDate(maha.end)}${antar ? ` · अंतरदशा: ${fmtDashaDate(antar.start)} – ${fmtDashaDate(antar.end)}` : ""}</p><div class="planet-table-scroll"><table class="planet-table"><thead><tr><th>महादशा</th><th>आरंभ</th><th>समाप्ति</th></tr></thead><tbody>${dasha.timeline.map(x=>`<tr><td>${x.lord}</td><td>${fmtDashaDate(x.start)}</td><td>${fmtDashaDate(x.end)}</td></tr>`).join("")}</tbody></table></div></div>`;
 }
 function getPosition(swe,jd,body,short,full) {
  const pos=swe.calculatePosition(jd,body);
@@ -87,7 +132,9 @@ export async function buildKundli(input) {
    node.longitude=norm(node.longitude-ayanamsa);
    planets.push(node,{short:"के",full:"केतु",longitude:norm(node.longitude+180),speed:node.speed,retrograde:true});
    const ascSign=signOf(ascendant);
-   const moonSign=signOf(planets.find(p=>p.short==="चं").longitude);
+   const moon=planets.find(p=>p.short==="चं");
+   const moonSign=signOf(moon.longitude);
+   const dasha=vimshottariDasha(moon.longitude,utcDate);
    const d9Planets=planets.map(p=>({...p,d1Sign:signOf(p.longitude),longitude:navamsaLongitude(p.longitude)}));
    const d9Asc=signOf(navamsaLongitude(ascendant));
    const name=input.name ? `${input.name} — ` : "";
@@ -98,6 +145,6 @@ export async function buildKundli(input) {
    // Compare the original sidereal D1 sign with the D9 sign exactly once.
    const vargottama=planets.filter(p=>signOf(p.longitude)===signOf(navamsaLongitude(p.longitude)));
    const extra=`<div class="panel calculation-summary"><h3>अन्य विवरण</h3><div class="summary-pills"><span>लग्न: ${SIGN_NAMES[ascSign]}</span><span>चंद्र राशि: ${SIGN_NAMES[moonSign]}</span><span>वक्री ग्रह: ${planets.filter(p=>p.retrograde).map(p=>p.short).join(", ")||"कोई नहीं"}</span><span>वर्गोत्तम: ${vargottama.map(p=>p.short).join(", ")||"कोई नहीं"}</span></div><p>ग्रहों की राशि और भाव स्थिति जन्म समय, स्थान, समय क्षेत्र तथा लाहिरी अयनांश पर आधारित है।</p></div>`;
-   return `${meta}${charts}${planetTable(planets)}${extra}`;
+   return `${meta}${charts}${planetTable(planets)}${dashaPanel(dasha)}${extra}`;
  } finally { try{swe.close();}catch{} }
 }
