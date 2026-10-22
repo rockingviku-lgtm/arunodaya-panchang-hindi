@@ -293,7 +293,13 @@ function renderMuhurat() {
         <label>तारीख<input id="m-date" type="date" value="${state.date}"></label>
         <label>शहर / स्थान<input id="m-place" value="Lucknow, India"></label>
       </div>
-      <button class="btn primary" data-action="show-muhurat">समय-सारणी देखें →</button>
+      <button class="btn secondary" type="button"
+  data-action="use-muhurat-location">
+  📍 मेरी वर्तमान लोकेशन लें
+</button>
+<p id="m-location-status" class="muted">
+  GPS से अपना स्थान चुनें, फिर समय-सारणी देखें।
+</p>
       <div id="m-result"></div>
     </div>
     <div class="timing-list">
@@ -513,7 +519,77 @@ document.addEventListener("click", async (e) => {
     }
     return;
   }
+if (action === "use-muhurat-location") {
+  const status = $("#m-location-status");
 
+  if (!navigator.geolocation) {
+    status.textContent = "आपके ब्राउज़र में GPS उपलब्ध नहीं है।";
+    return;
+  }
+
+  actionButton.disabled = true;
+  status.textContent = "आपकी लोकेशन प्राप्त हो रही है…";
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+
+        const url = new URL(
+          "https://nominatim.openstreetmap.org/reverse"
+        );
+        url.searchParams.set("format", "jsonv2");
+        url.searchParams.set("lat", String(latitude));
+        url.searchParams.set("lon", String(longitude));
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+          throw new Error("स्थान का नाम नहीं मिल पाया।");
+        }
+
+        const data = await response.json();
+        const a = data.address || {};
+        const city =
+          a.city || a.town || a.village ||
+          a.municipality || a.county;
+
+        if (!city) {
+          throw new Error("आपका शहर नहीं मिल पाया।");
+        }
+
+        $("#m-place").value =
+          `${city}, ${a.state || ""}, ${a.country || "India"}`
+            .replace(/,\s*,/g, ",")
+            .trim();
+
+        status.textContent =
+          `लोकेशन मिली: ${$("#m-place").value}। अब समय-सारणी देखें।`;
+      } catch (error) {
+        status.textContent = error.message ||
+          "लोकेशन प्राप्त नहीं हो सकी।";
+      } finally {
+        actionButton.disabled = false;
+        actionButton.textContent = "📍 मेरी वर्तमान लोकेशन लें";
+      }
+    },
+    (error) => {
+      status.textContent =
+        error.code === 1
+          ? "GPS की अनुमति दें और दोबारा कोशिश करें।"
+          : "लोकेशन नहीं मिली। GPS चालू करके कोशिश करें।";
+
+      actionButton.disabled = false;
+      actionButton.textContent = "📍 मेरी वर्तमान लोकेशन लें";
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 300000
+    }
+  );
+
+  return;
+}
   if (action === "use-location") {
     if (!navigator.geolocation) {
       alert("इस ब्राउज़र में GPS लोकेशन सुविधा उपलब्ध नहीं है।");
