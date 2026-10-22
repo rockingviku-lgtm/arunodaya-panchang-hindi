@@ -125,7 +125,97 @@ function renderKundli() {
        inputmode="numeric"
        pattern="(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/[0-9]{4}"
        maxlength="10" required>
-</label><label>जन्म समय<input id="k-time" type="time" value="12:00" required></label><label>समय क्षेत्र<select id="k-zone"><option value="330">भारत (UTC +05:30)</option><option value="0">UTC</option></select></label><label>जन्म स्थान<input id="k-place" value="Lucknow, India" required></label><label>अक्षांश (Latitude)<input id="k-lat" type="number" value="26.8467" step="any" required></label><label>देशांतर (Longitude)<input id="k-lon" type="number" value="80.9462" step="any" required></label></div><button class="btn primary" type="submit">कुंडली बनाएँ →</button></form><div id="k-result"></div></div>
+</label>
+let kundliPlaceResults = [];
+
+// जन्म-स्थान खोजें
+document.addEventListener("click", async (e) => {
+  const searchBtn = e.target.closest("#k-place-search");
+
+  if (searchBtn) {
+    const placeInput = document.querySelector("#k-place");
+    const resultBox = document.querySelector("#k-place-results");
+    const query = placeInput?.value.trim();
+
+    if (!query || !resultBox) return;
+
+    searchBtn.disabled = true;
+    resultBox.textContent = "स्थान खोजा जा रहा है...";
+
+    try {
+      const url =
+        "https://nominatim.openstreetmap.org/search" +
+        "?format=jsonv2&limit=5&addressdetails=1&q=" +
+        encodeURIComponent(query);
+
+      const response = await fetch(url, {
+        headers: { Accept: "application/json" }
+      });
+
+      if (!response.ok) {
+        throw new Error("स्थान खोज सेवा उपलब्ध नहीं है।");
+      }
+
+      const data = await response.json();
+      kundliPlaceResults = Array.isArray(data) ? data : [];
+
+      resultBox.replaceChildren();
+
+      if (kundliPlaceResults.length === 0) {
+        resultBox.textContent =
+          "स्थान नहीं मिला। शहर और राज्य का नाम लिखकर खोजें।";
+        return;
+      }
+
+      const heading = document.createElement("p");
+      heading.textContent = "अपना सही जन्म-स्थान चुनें:";
+      resultBox.appendChild(heading);
+
+      kundliPlaceResults.forEach((place, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn place-result";
+        button.dataset.placeIndex = String(index);
+        button.textContent = place.display_name;
+        resultBox.appendChild(button);
+      });
+
+    } catch (error) {
+      resultBox.textContent =
+        (error.message || "खोज में समस्या हुई") +
+        " इंटरनेट कनेक्शन जाँचें।";
+    } finally {
+      searchBtn.disabled = false;
+    }
+
+    return;
+  }
+
+  // चुने हुए स्थान के coordinates भरें
+  const selectedBtn = e.target.closest("[data-place-index]");
+
+  if (!selectedBtn) return;
+
+  const index = Number(selectedBtn.dataset.placeIndex);
+  const place = kundliPlaceResults[index];
+
+  if (!place) return;
+
+  document.querySelector("#k-place").value = place.display_name;
+  document.querySelector("#k-lat").value =
+    Number(place.lat).toFixed(6);
+  document.querySelector("#k-lon").value =
+    Number(place.lon).toFixed(6);
+
+  const resultBox = document.querySelector("#k-place-results");
+  resultBox.replaceChildren();
+
+  const message = document.createElement("p");
+  message.textContent =
+    "स्थान चुन लिया गया। DOB या जन्म-समय बदलने पर coordinates नहीं बदलेंगे।";
+  resultBox.appendChild(message);
+});
+></div><button class="btn primary" type="submit">कुंडली बनाएँ →</button></form><div id="k-result"></div></div>
  <div class="notice compact"><span>ⓘ</span><p>इस शुरुआती संस्करण में वास्तविक ग्रह-स्थिति, लग्न, भाव, नवांश (D9), वक्री और वर्गोत्तम गणना जुड़ी नहीं है। गलत या अनुमानित कुंडली प्रदर्शित करने के बजाय परिणाम को सत्यापित खगोलीय इंजन से जोड़ना आवश्यक है।</p></div>`;
 }
 function render() {
@@ -176,7 +266,11 @@ date:(()=> {
   return `${yyyy}-${mm}-${dd}`;
 })(),
 time:$("#k-time").value,
-   timezoneMinutes:Number($("#k-zone").value), lat:Number($("#k-lat").value), lon:Number($("#k-lon").value)
+   
+timezoneMinutes: Number($("#k-zone").value),
+lat: Number($("#k-lat").value),
+lon: Number($("#k-lon").value)
+
  };
  try { result.innerHTML=await buildKundli(payload); }
  catch(err){ console.error(err); result.innerHTML=`<div class="result-box error-box"><b>गणना पूरी नहीं हो सकी</b><p>${String(err?.message||err)}. इंटरनेट कनेक्शन जाँचकर दोबारा कोशिश करें।</p></div>`; }
