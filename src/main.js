@@ -129,7 +129,7 @@ function renderKundli() {
     pattern="[0-9]{2}-[0-9]{2}-[0-9]{4}"
     required
   >
-</label></label><label>जन्म समय<input id="k-time" type="time" value="12:00" required></label><label>समय क्षेत्र<select id="k-zone"><option value="330">भारत (UTC +05:30)</option><option value="0">UTC</option></select></label><label>जन्म स्थान<input id="k-place" value="Lucknow, India" required></label><label>अक्षांश (Latitude)<input id="k-lat" type="number" value="26.8467" step="any" required></label><label>देशांतर (Longitude)<input id="k-lon" type="number" value="80.9462" step="any" required></label></div><button class="btn primary" type="submit">Swiss Ephemeris से कुंडली बनाएँ →</button></form><div id="k-result"></div></div>
+</label></label><label>जन्म समय<input id="k-time" type="time" value="12:00" required></label><label>समय क्षेत्र<select id="k-zone"><option value="330">भारत (UTC +05:30)</option><option value="0">UTC</option></select></label><label>जन्म स्थान<input id="k-place" value="Lucknow, India" required></label><label>अक्षांश (Latitude)<input id="k-lat" type="number" value="26.8467" step="any" required></label><label>देशांतर (Longitude)<input id="k-lon" type="number" value="80.9462" step="any" required></label></div><button class="btn primary" type="submit">कुंडली बनाएँ →</button></form><div id="k-result"></div></div>
  <div class="notice compact"><span>ⓘ</span><p>इस शुरुआती संस्करण में वास्तविक ग्रह-स्थिति, लग्न, भाव, नवांश (D9), वक्री और वर्गोत्तम गणना जुड़ी नहीं है। गलत या अनुमानित कुंडली प्रदर्शित करने के बजाय परिणाम को सत्यापित खगोलीय इंजन से जोड़ना आवश्यक है।</p></div>`;
 }
 function render() {
