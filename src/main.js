@@ -1,6 +1,12 @@
 
+
 import "./style.css";
 import { buildKundli } from "./kundli.js";
+import {
+  searchBirthPlaces,
+  getBirthTimezoneOffset
+} from "./location.js";
+
 
 const $ = (s) => document.querySelector(s);
 
@@ -321,7 +327,22 @@ function renderKundli() {
               <option value="0">UTC</option>
             </select>
           </label>
-          <label>जन्म स्थान<input id="k-place" value="Lucknow, India" required></label>
+          
+<label class="birthplace-field">
+  जन्म स्थान (शहर या गाँव)
+  <input
+    id="k-place"
+    value="Lucknow"
+    placeholder="जैसे Lucknow, London, New York"
+    autocomplete="off"
+    required
+  >
+</label>
+<div id="k-place-results" class="birthplace-results"></div>
+<p id="k-place-status" class="birthplace-status">
+  जन्मस्थान खोजें और सूची से सही शहर चुनें।
+</p>
+
           <label>अक्षांश (Latitude)<input id="k-lat" type="number" value="26.8467" min="-90" max="90" step="any" required></label>
           <label>देशांतर (Longitude)<input id="k-lon" type="number" value="80.9462" min="-180" max="180" step="any" required></label>
         </div>
@@ -330,12 +351,118 @@ function renderKundli() {
       </form>
       <div id="k-result"></div>
     </div>
-    <div class="notice compact"><span>ⓘ</span><p>जन्मकुंडली की गणना के लिए Swiss Ephemeris इंजन का सही तरीके से लोड होना आवश्यक है। वर्तमान GPS लोकेशन जन्मस्थान से अलग हो सकती है।</p></div>`;
+    
+let selectedBirthPlace = null;
+let birthPlaceSearchNumber = 0;
+
+function setupBirthPlaceSearch() {
+  const input = document.querySelector("#k-place");
+  const results = document.querySelector("#k-place-results");
+  const status = document.querySelector("#k-place-status");
+
+  if (!input || !results || !status) return;
+
+  selectedBirthPlace = null;
+
+  const latInput = document.querySelector("#k-lat");
+  const lonInput = document.querySelector("#k-lon");
+
+  input.addEventListener("input", async () => {
+    selectedBirthPlace = null;
+
+    const query = input.value.trim();
+    const searchNumber = ++birthPlaceSearchNumber;
+
+    results.replaceChildren();
+
+    if (latInput) latInput.value = "";
+    if (lonInput) lonInput.value = "";
+
+    if (query.length < 2) {
+      status.textContent = "कम-से-कम 2 अक्षर लिखें।";
+      return;
+    }
+
+    status.textContent = "दुनिया भर में स्थान खोजे जा रहे हैं…";
+
+    try {
+      const places = await searchBirthPlaces(query);
+
+      if (searchNumber !== birthPlaceSearchNumber) return;
+
+      if (!places.length) {
+        status.textContent =
+          "स्थान नहीं मिला। शहर के साथ देश का नाम भी लिखें।";
+        return;
+      }
+
+      status.textContent = "सही शहर चुनें:";
+
+      for (const place of places) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "birthplace-option";
+
+        const details = [
+          place.region,
+          place.country
+        ].filter(Boolean).join(", ");
+
+        button.textContent = details
+          ? `${place.name} — ${details}`
+          : place.name;
+
+        button.addEventListener("click", () => {
+          selectedBirthPlace = place;
+
+          input.value = [
+            place.name,
+            place.region,
+            place.country
+          ].filter(Boolean).filter(
+            (value, index, array) => array.indexOf(value) === index
+          ).join(", ");
+
+          if (latInput) {
+            latInput.value = place.latitude.toFixed(6);
+          }
+
+          if (lonInput) {
+            lonInput.value = place.longitude.toFixed(6);
+          }
+
+          results.replaceChildren();
+
+          status.textContent =
+            `चुना गया: ${place.name} · ${place.timezone}`;
+
+          const zone = document.querySelector("#k-zone");
+
+          // Save the IANA timezone for the birth-date calculation.
+          if (zone) {
+            zone.dataset.ianaTimezone = place.timezone;
+            zone.dataset.locationSelected = "true";
+          }
+        });
+
+        results.appendChild(button);
+      }
+    } catch (error) {
+      if (searchNumber !== birthPlaceSearchNumber) return;
+
+      console.error("Birthplace search failed:", error);
+      status.textContent =
+        "स्थान खोजने में समस्या हुई। इंटरनेट कनेक्शन जाँचकर फिर कोशिश करें।";
+    }
+  });
 }
+
 
 function render() {
   const root = $("#page-content");
-  root.innerHTML = ({
+  root.innerHTML = if (state.active === "kundli") {
+  setupBirthPlaceSearch();
+}({
     home: renderHome,
     panchang: renderPanchang,
     calendar: renderCalendar,
@@ -539,12 +666,24 @@ document.addEventListener("submit", async (e) => {
     ) {
       throw new Error("अक्षांश या देशांतर सही भरें।");
     }
+if (!selectedBirthPlace) {
+  throw new Error("जन्मस्थान खोजकर सूची से सही शहर चुनें।");
+}
+
+const timezoneMinutes = getBirthTimezoneOffset(
+  `${yyyy}-${mm}-${dd}`,
+  time,
+  selectedBirthPlace.timezone
+);
+
+const lat = selectedBirthPlace.latitude;
+const lon = selectedBirthPlace.longitude;
 
     const payload = {
       name: $("#k-name").value.trim(),
       date: `${yyyy}-${mm}-${dd}`,
       time,
-      timezoneMinutes: Number($("#k-zone").value),
+      timezoneMinutes: timezoneMinutes,
       lat,
       lon
     };
