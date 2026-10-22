@@ -675,3 +675,33 @@ document.addEventListener("submit", async (e) => {
 });
 
 setDate(state.date);
+function getCurrentGPSLocation() {
+  return new Promise((resolve, reject) => {
+    if (!("geolocation" in navigator)) {
+      reject(new Error("आपके ब्राउज़र में GPS उपलब्ध नहीं है।"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        resolve({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy
+        });
+      },
+      (error) => {
+        reject(new Error(
+          error.code === 1
+            ? "लोकेशन की अनुमति नहीं मिली।"
+            : "लोकेशन प्राप्त नहीं हो सकी।"
+        ));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 300000
+      }
+    );
+  });
+}
