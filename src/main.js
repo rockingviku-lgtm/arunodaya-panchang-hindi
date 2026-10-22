@@ -35,6 +35,8 @@ const state = {
   active: "home"
 };
 
+let muhuratGps = null;
+
 const nav = [
   ["home", "⌂", "होम"],
   ["panchang", "☼", "पंचांग"],
@@ -232,7 +234,7 @@ function renderPanchang() {
         <label>पंचांग की तारीख<input id="p-date" type="date" value="${state.date}"></label>
         <label>समय<input id="p-time" type="time" value="12:00"></label>
         <label>स्थान / शहर<input id="p-place" value="Lucknow, India"></label>
-        <label>समय क्षेत्र<select id="p-zone"><option value="330">भारत (UTC +05:30)</option><option value="0">UTC</option></select></label>
+        <label>समय क्षेत्र<select id="p-zone"><option value="330">भारत (IST · UTC +05:30)</option><option value="0">UTC (तकनीकी जाँच)</option></select></label>
       </div>
       <button class="btn primary" data-action="show-panchang">चुनी तारीख का पंचांग देखें →</button>
       <div id="p-result"></div>
@@ -275,13 +277,13 @@ function renderCalendar() {
       <div class="calendar-legend"><span><i class="legend-dot"></i> आज</span><span><i class="legend-dot gold-dot"></i> चुनी गई तारीख</span></div>
     </div>
     <div class="panel selected-date-panel">
-      <div><small>चुनी गई तारीख</small><h3>${fmtDate(state.date)}</h3><p>इस तारीख का विवरण देखने के लिए पंचांग खोलें।</p></div>
+      <div><small>चुनी गई तारीख</small><h3>${fmtDate(state.date)}</h3><p>इस तारीख का पंचांग और शुभ समय देखने के लिए नीचे बटन दबाएँ।</p></div>
       <button class="btn primary" data-page="panchang">पंचांग देखें →</button>
     </div>`;
 }
 
 function timing(name, desc, icon) {
-  return `<div class="timing-item"><span class="timing-icon">${icon}</span><div><b>${name}</b><small>${desc}</small></div><span class="timing-status">जल्द उपलब्ध</span></div>`;
+  return `<div class="timing-item"><span class="timing-icon">${icon}</span><div><b>${name}</b><small>${desc}</small></div><span class="timing-status">गणना करें ↑</span></div>`;
 }
 
 function renderMuhurat() {
@@ -293,20 +295,16 @@ function renderMuhurat() {
         <label>तारीख<input id="m-date" type="date" value="${state.date}"></label>
         <label>शहर / स्थान<input id="m-place" value="Lucknow, India"></label>
       </div>
-      <button class="btn secondary" type="button"
-  data-action="use-muhurat-location">
-  📍 मेरी वर्तमान लोकेशन लें
-</button>
-<p id="m-location-status" class="muted">
-  GPS से अपना स्थान चुनें, फिर समय-सारणी देखें।
-</p>
+      <button class="btn secondary" data-action="use-muhurat-location">📍 मेरी वर्तमान लोकेशन लें</button>
+      <p id="m-location-status" class="muted">शहर लिखें या GPS से वर्तमान लोकेशन लें।</p>
+      <button class="btn primary" data-action="show-muhurat">समय-सारणी देखें →</button>
       <div id="m-result"></div>
     </div>
     <div class="timing-list">
-      ${timing("राहुकाल", "स्थानीय गणना आवश्यक", "☾")}
-      ${timing("गुलिक काल", "स्थानीय गणना आवश्यक", "◷")}
-      ${timing("अभिजीत मुहूर्त", "सूर्योदय-सूर्यास्त आवश्यक", "✧")}
-      ${timing("सूर्योदय / सूर्यास्त", "स्थान के अनुसार बदलता है", "☼")}
+      ${timing("राहुकाल", "समय-सारणी देखें", "☾")}
+      ${timing("गुलिक काल", "समय-सारणी देखें", "◷")}
+      ${timing("अभिजीत मुहूर्त", "समय-सारणी देखें", "✧")}
+      ${timing("सूर्योदय / सूर्यास्त", "समय-सारणी देखें", "☼")}
     </div>`;
 }
 
@@ -493,7 +491,9 @@ document.addEventListener("click", async (e) => {
     actionButton.textContent = "गणना हो रही है…";
     result.innerHTML = `<div class="result-box"><p>खगोलीय गणना और स्थान खोजे जा रहे हैं…</p></div>`;
     try {
-      const place = await geocodePanchangPlace(placeInput.value || "Lucknow, India");
+      const place = muhuratGps && !isPanchang
+        ? muhuratGps
+        : await geocodePanchangPlace(placeInput.value || "Lucknow, India");
       const data = await calculatePanchang({ date: d, lat: place.lat, lon: place.lon, timezoneMinutes: offset, place: place.name });
       const time = value => formatPanchangTime(value, offset);
       const dateTime = value => formatPanchangDateTime(value, offset);
@@ -509,6 +509,29 @@ document.addEventListener("click", async (e) => {
         $("#today-meta").textContent = `${data.weekday} · ${data.place}`;
       } else {
         result.innerHTML = `${common}<div class="panel"><h3>दिन के शुभ / अशुभ समय</h3>${period("राहुकाल",data.periods.rahu)}${period("गुलिक काल",data.periods.gulika)}${period("यमगण्ड",data.periods.yamaganda)}${period("अभिजीत मुहूर्त",data.periods.abhijit)}<p class="muted">ये समय सूर्योदय-सूर्यास्त से निकाले गए हैं। स्थानीय परंपरा के अनुसार मुहूर्त में अंतर हो सकता है।</p></div>`;
+        const cards = document.querySelectorAll(".timing-list .timing-item");
+        const cardValues = [
+          ["राहुकाल", data.periods.rahu],
+          ["गुलिक काल", data.periods.gulika],
+          ["अभिजीत मुहूर्त", data.periods.abhijit]
+        ];
+        cardValues.forEach(([label, value], index) => {
+          const card = cards[index];
+          if (!card) return;
+          const small = card.querySelector("small");
+          const status = card.querySelector(".timing-status");
+          if (small) small.textContent = value ? `${time(value.start)} – ${time(value.end)}` : "गणना उपलब्ध नहीं";
+          if (status) status.textContent = value ? "गणना पूरी" : "उपलब्ध नहीं";
+        });
+        const sunCard = cards[3];
+        if (sunCard) {
+          const small = sunCard.querySelector("small");
+          const status = sunCard.querySelector(".timing-status");
+          if (small) small.textContent = `सूर्योदय ${time(data.sunrise)} · सूर्यास्त ${time(data.sunset)}`;
+          if (status) status.textContent = data.sunrise && data.sunset ? "गणना पूरी" : "उपलब्ध नहीं";
+        }
+        const locationStatus = $("#m-location-status");
+        if (locationStatus) locationStatus.textContent = `समय गणना पूरी: ${data.place} · ${fmtDate(d)}`;
       }
     } catch (error) {
       console.error("Panchang calculation failed:", error);
@@ -519,77 +542,51 @@ document.addEventListener("click", async (e) => {
     }
     return;
   }
-if (action === "use-muhurat-location") {
-  const status = $("#m-location-status");
 
-  if (!navigator.geolocation) {
-    status.textContent = "आपके ब्राउज़र में GPS उपलब्ध नहीं है।";
-    return;
-  }
-
-  actionButton.disabled = true;
-  status.textContent = "आपकी लोकेशन प्राप्त हो रही है…";
-
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
+  if (action === "use-muhurat-location") {
+    const status = $("#m-location-status");
+    if (!navigator.geolocation) {
+      if (status) status.textContent = "आपके ब्राउज़र में GPS उपलब्ध नहीं है।";
+      return;
+    }
+    actionButton.disabled = true;
+    actionButton.textContent = "लोकेशन प्राप्त हो रही है…";
+    if (status) status.textContent = "GPS की अनुमति दें…";
+    navigator.geolocation.getCurrentPosition(async (position) => {
       try {
-        const { latitude, longitude } = position.coords;
-
-        const url = new URL(
-          "https://nominatim.openstreetmap.org/reverse"
-        );
-        url.searchParams.set("format", "jsonv2");
-        url.searchParams.set("lat", String(latitude));
-        url.searchParams.set("lon", String(longitude));
-
-        const response = await fetch(url.toString());
-        if (!response.ok) {
-          throw new Error("स्थान का नाम नहीं मिल पाया।");
-        }
-
-        const data = await response.json();
-        const a = data.address || {};
-        const city =
-          a.city || a.town || a.village ||
-          a.municipality || a.county;
-
-        if (!city) {
-          throw new Error("आपका शहर नहीं मिल पाया।");
-        }
-
-        $("#m-place").value =
-          `${city}, ${a.state || ""}, ${a.country || "India"}`
-            .replace(/,\s*,/g, ",")
-            .trim();
-
-        status.textContent =
-          `लोकेशन मिली: ${$("#m-place").value}। अब समय-सारणी देखें।`;
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        let placeName = `GPS स्थान (${lat.toFixed(4)}, ${lon.toFixed(4)})`;
+        try {
+          const url = new URL("https://nominatim.openstreetmap.org/reverse");
+          url.searchParams.set("format", "jsonv2");
+          url.searchParams.set("lat", String(lat));
+          url.searchParams.set("lon", String(lon));
+          const response = await fetch(url.toString());
+          if (response.ok) {
+            const data = await response.json();
+            const a = data.address || {};
+            placeName = [a.city || a.town || a.village || a.municipality || a.county, a.state, a.country].filter(Boolean).join(", ") || placeName;
+          }
+        } catch (_) {}
+        muhuratGps = { lat, lon, name: placeName };
+        const placeInput = $("#m-place");
+        if (placeInput) placeInput.value = placeName;
+        if (status) status.textContent = `लोकेशन मिली: ${placeName}। अब “समय-सारणी देखें” दबाएँ।`;
       } catch (error) {
-        status.textContent = error.message ||
-          "लोकेशन प्राप्त नहीं हो सकी।";
+        if (status) status.textContent = "लोकेशन पढ़ने में समस्या हुई। दोबारा कोशिश करें।";
       } finally {
         actionButton.disabled = false;
         actionButton.textContent = "📍 मेरी वर्तमान लोकेशन लें";
       }
-    },
-    (error) => {
-      status.textContent =
-        error.code === 1
-          ? "GPS की अनुमति दें और दोबारा कोशिश करें।"
-          : "लोकेशन नहीं मिली। GPS चालू करके कोशिश करें।";
-
+    }, (error) => {
+      if (status) status.textContent = error.code === 1 ? "लोकेशन की अनुमति दें, फिर दोबारा कोशिश करें।" : "GPS लोकेशन नहीं मिली। GPS चालू करके फिर कोशिश करें।";
       actionButton.disabled = false;
       actionButton.textContent = "📍 मेरी वर्तमान लोकेशन लें";
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 300000
-    }
-  );
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 });
+    return;
+  }
 
-  return;
-}
   if (action === "use-location") {
     if (!navigator.geolocation) {
       alert("इस ब्राउज़र में GPS लोकेशन सुविधा उपलब्ध नहीं है।");
@@ -750,15 +747,7 @@ document.addEventListener("submit", async (e) => {
   }
 });
 
-setDate(state.date);
-function getCurrentGPSLocation() {
-  return new Promise((resolve, reject) => {
-    if (!("geolocation" in navigator)) {
-      reject(new Error("आपके ब्राउज़र में GPS उपलब्ध नहीं है।"));
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
+setDate(state.date); navigator.geolocation.getCurrentPosition(
       (position) => {
         resolve({
           latitude: position.coords.latitude,
