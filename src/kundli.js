@@ -74,14 +74,14 @@ function parseBirthDateTime(dateText, timeText, timezoneMinutes) {
     : null;
 
   if (!match) {
-    throw new Error("जन्म तारीख DD-MM-YYYY में लिखें, जैसे 08-01-2002।");
+    throw new Error("जन्म तारीख DD-MM-YYYY में लिखें, जैसे 08-01-2002");
   }
 
   if (
     typeof timeText !== "string" ||
     !/^\d{2}:\d{2}$/.test(timeText)
   ) {
-    throw new Error("जन्म समय सही भरें (HH:MM)।");
+    throw new Error("जन्म समय HH:MM में भरें");
   }
 
   const [, dd, mm, yyyy] = match;
@@ -99,18 +99,17 @@ function parseBirthDateTime(dateText, timeText, timezoneMinutes) {
     hour > 23 ||
     minute > 59
   ) {
-    throw new Error("जन्म तारीख या समय मान्य नहीं है।");
+    throw new Error("जन्म तारीख या समय मान्य नहीं है");
   }
 
-  const utcMillis =
-    Date.UTC(year, month - 1, day, hour, minute) -
-    timezoneMinutes * 60 * 1000;
+  const offset = Number.isFinite(timezoneMinutes)
+    ? timezoneMinutes
+    : 330;
 
-  return new Date(utcMillis);
-}
-  // Default to India Standard Time when caller doesn't provide a timezone.
-  const offset = Number.isFinite(timezoneMinutes) ? timezoneMinutes : 330;
-  return new Date(Date.UTC(year, month - 1, day, hour, minute) - offset * 60000);
+  return new Date(
+    Date.UTC(year, month - 1, day, hour, minute) -
+    offset * 60000
+  );
 }
 function diamondSvg(title, ascSign, planets, note) {
   const byHouse = Array.from({length:12},()=>[]);
