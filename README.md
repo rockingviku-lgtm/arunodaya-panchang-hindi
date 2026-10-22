@@ -1,27 +1,25 @@
-# Arunodaya Panchang
+# Arunodaya Panchang — Swiss Ephemeris Kundli update
 
-Mobile-first Vite website starter for a modern Hindi Panchang experience.
+This update preserves the supplied Vite starter pages and adds a browser-side Swiss Ephemeris calculation flow for the Kundli form.
 
-## Features in this starter
-- Home page with daily Panchang entry point
-- Date selector and month calendar
-- Panchang, Muhurat and Kundli form pages
-- Responsive dark navy and gold theme
-- No backend/API keys required for the starter UI
+## Included
+- Birth chart (D1), Chandra Kundli, and Navamsa (D9) in a North Indian diamond-style layout.
+- Rashi numbers and short Hindi planet labels in chart houses.
+- Lahiri sidereal adjustment, ascendant, planet positions, retrograde indicator, and a planet position table.
+- Birth form uses the selected timezone offset and entered coordinates.
 
-## Important accuracy note
-This starter is a user-interface and navigation foundation. It does **not** calculate verified tithi/nakshatra transitions, sunrise/sunset, Rahu Kaal, auspicious timings, planetary positions, Lagna, Navamsa, retrograde or Vargottama. Do not present placeholders as real astrological calculations. Connect a suitable, tested astronomical/Panchang engine and verify its licensing before production use.
+## Build / deploy
+1. Upload these files to the GitHub repository, keeping the folder paths unchanged.
+2. Cloudflare Pages build command: `npm install && npm run build`
+3. Build output directory: `dist`
 
-## Build
-```bash
-npm install
-npm run build
-```
-Vite output directory: `dist`
+## Important limitations
+- This starter still does not calculate a full verified daily Panchang or Muhurat; those pages remain placeholders.
+- The browser package's built-in Moshier ephemeris is used unless optional Swiss ephemeris data files are configured. Verify calculations against trusted chart software and known test charts before relying on them.
+- Rahu uses Mean Node where available (True Node fallback); Ketu is set exactly opposite Rahu.
+- Vargottama is determined by comparing the D1 sign with the calculated D9 sign.
+- This implementation has been syntax-checked, but a full Vite production build could not be completed in this environment because dependency installation timed out. Run the build on GitHub/Cloudflare after upload and check the browser console.
+- `@swisseph/browser` is published under AGPL-3.0. Review its license obligations before distributing or commercially operating the website.
 
-## Cloudflare Pages
-- Framework preset: Vite (or None if required)
-- Build command: `npm run build`
-- Build output directory: `dist`
-- Root directory: `/` or blank
-- Ensure the path is exactly `src/main.js` and `src/style.css` (lowercase `src`).
+## Dependency
+`@swisseph/browser` (1.4.x)
