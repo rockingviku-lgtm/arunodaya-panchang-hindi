@@ -143,7 +143,11 @@ export async function buildKundli(input) {
    const charts=`<div class="kundli-chart-grid">${diamondSvg("जन्म कुंडली (D1)",ascSign,planets,"लग्न-आधारित राशि कुंडली")}${diamondSvg("चंद्र कुंडली",moonSign,planets,"चंद्र राशि को प्रथम भाव मानकर")}${diamondSvg("नवांश कुंडली (D9)",d9Asc,d9Planets,"ग्रहों की नवांश राशि के आधार पर")}</div>`;
    // Vargottama means the planet occupies the same sign in D1 and D9.
    // Compare the original sidereal D1 sign with the D9 sign exactly once.
-   const vargottama=planets.filter(p=>signOf(p.longitude)===signOf(navamsaLongitude(p.longitude)));
+   const vargottama = planets.filter(p => {
+  const d1Sign = signOf(p.longitude);
+  const d9Sign = signOf(navamsaLongitude(p.longitude));
+  return d1Sign === d9Sign;
+});
    const extra=`<div class="panel calculation-summary"><h3>अन्य विवरण</h3><div class="summary-pills"><span>लग्न: ${SIGN_NAMES[ascSign]}</span><span>चंद्र राशि: ${SIGN_NAMES[moonSign]}</span><span>वक्री ग्रह: ${planets.filter(p=>p.retrograde).map(p=>p.short).join(", ")||"कोई नहीं"}</span><span>वर्गोत्तम: ${vargottama.map(p=>p.short).join(", ")||"कोई नहीं"}</span></div><p>ग्रहों की राशि और भाव स्थिति जन्म समय, स्थान, समय क्षेत्र तथा लाहिरी अयनांश पर आधारित है।</p></div>`;
    return `${meta}${charts}${planetTable(planets)}${dashaPanel(dasha)}${extra}`;
  } finally { try{swe.close();}catch{} }
