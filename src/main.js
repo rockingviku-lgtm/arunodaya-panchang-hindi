@@ -458,11 +458,27 @@ function setupBirthPlaceSearch() {
 }
 
 
+
 function render() {
   const root = $("#page-content");
-  root.innerHTML = if (state.active === "kundli") {
-  setupBirthPlaceSearch();
-}({
+
+  root.innerHTML = ({
+    home: renderHome,
+    panchang: renderPanchang,
+    calendar: renderCalendar,
+    muhurat: renderMuhurat,
+    kundli: renderKundli
+  })[state.active]();
+
+  if (state.active === "kundli") {
+    setupBirthPlaceSearch();
+  }
+
+  document.querySelectorAll(".bottom-nav [data-page]").forEach(b => {
+    b.classList.toggle("selected", b.dataset.page === state.active);
+  });
+}
+({
     home: renderHome,
     panchang: renderPanchang,
     calendar: renderCalendar,
