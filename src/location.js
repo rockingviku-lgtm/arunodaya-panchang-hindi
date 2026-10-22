@@ -1,16 +1,48 @@
-
 const GEOCODING_URL = "https://geocoding-api.open-meteo.com/v1/search";
 
-export async function searchBirthPlaces(query) {
-  const name = String(query || "").trim();
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toLowerCase()
+    .replace(/[.,]/g, " ")
+    .replace(/\s+/g, " ");
+}
 
-  if (name.length < 2) return [];
+function mapPlace(place) {
+  return {
+    name: place.name || "",
+    country: place.country || "",
+    region: place.admin1 || "",
+    latitude: Number(place.latitude),
+    longitude: Number(place.longitude),
+    timezone: place.timezone || "UTC"
+  };
+}
 
+function isBarabankiUttarPradesh(place) {
+  const name = normalizeText(place.name);
+  const region = normalizeText(place.region);
+  const country = normalizeText(place.country);
+
+  return (
+    name === "barabanki" &&
+    (region.includes("uttar pradesh") || region === "up") &&
+    (country === "india" || country === "in")
+  );
+}
+
+async function fetchPlaces(name, countryCode = "") {
   const url = new URL(GEOCODING_URL);
   url.searchParams.set("name", name);
   url.searchParams.set("count", "10");
   url.searchParams.set("language", "en");
   url.searchParams.set("format", "json");
+
+  if (countryCode) {
+    url.searchParams.set("countryCode", countryCode);
+  }
 
   const response = await fetch(url.toString());
 
@@ -19,15 +51,56 @@ export async function searchBirthPlaces(query) {
   }
 
   const data = await response.json();
+  return (data.results || []).map(mapPlace);
+}
 
-  return (data.results || []).map(place => ({
-    name: place.name,
-    country: place.country || "",
-    region: place.admin1 || "",
-    latitude: Number(place.latitude),
-    longitude: Number(place.longitude),
-    timezone: place.timezone || "UTC"
-  }));
+export async function searchBirthPlaces(query) {
+  const name = String(query || "").trim();
+
+  if (name.length < 2) return [];
+
+  const isBarabankiQuery = normalizeText(name).includes("barabanki");
+
+  // Search India specifically for Barabanki so a similarly named place
+  // in another state/country does not appear ahead of the UP location.
+  let places = [];
+  if (isBarabankiQuery) {
+    const [indiaResults, generalResults] = await Promise.all([
+      fetchPlaces(name, "IN"),
+      fetchPlaces(name)
+    ]);
+    places = [...indiaResults, ...generalResults];
+  } else {
+    places = await fetchPlaces(name);
+  }
+
+  // Remove duplicates while retaining the place's coordinates and timezone.
+  const unique = new Map();
+  for (const place of places) {
+    const key = [
+      normalizeText(place.name),
+      normalizeText(place.region),
+      normalizeText(place.country),
+      place.latitude,
+      place.longitude
+    ].join("|");
+
+    if (!unique.has(key)) unique.set(key, place);
+  }
+
+  const results = [...unique.values()];
+
+  // Always rank Barabanki, Uttar Pradesh, India first when it is returned
+  // by the geocoding service. Do not silently substitute Odisha.
+  results.sort((a, b) => {
+    const aPreferred = isBarabankiUttarPradesh(a);
+    const bPreferred = isBarabankiUttarPradesh(b);
+    if (aPreferred && !bPreferred) return -1;
+    if (!aPreferred && bPreferred) return 1;
+    return 0;
+  });
+
+  return results;
 }
 
 export function getBirthTimezoneOffset(dateText, timeText, timezone) {
@@ -58,10 +131,7 @@ export function getBirthTimezoneOffset(dateText, timeText, timezone) {
     throw new Error("जन्मस्थान का टाइम ज़ोन उपलब्ध नहीं है।");
   }
 
-  // Find the UTC offset applicable to the birth date and time.
-  const wallClockAsUTC = Date.UTC(
-    year, month - 1, day, hour, minute
-  );
+  const wallClockAsUTC = Date.UTC(year, month - 1, day, hour, minute);
 
   const formatter = new Intl.DateTimeFormat("en-GB", {
     timeZone: timezone,
@@ -79,9 +149,8 @@ export function getBirthTimezoneOffset(dateText, timeText, timezone) {
       .map(part => [part.type, Number(part.value)])
   );
 
-  // Determine the offset at the approximate UTC instant.
   const utcInstant = new Date(wallClockAsUTC);
-  const utcParts = new Intl.DateTimeFormat("en-GB", {
+  const utcFormatter = new Intl.DateTimeFormat("en-GB", {
     timeZone: "UTC",
     year: "numeric",
     month: "2-digit",
@@ -92,19 +161,17 @@ export function getBirthTimezoneOffset(dateText, timeText, timezone) {
   });
 
   const utc = Object.fromEntries(
-    utcParts.formatToParts(utcInstant)
+    utcFormatter.formatToParts(utcInstant)
       .filter(part => part.type !== "literal")
       .map(part => [part.type, Number(part.value)])
   );
 
   const localAsUTC = Date.UTC(
-    parts.year, parts.month - 1, parts.day,
-    parts.hour, parts.minute
+    parts.year, parts.month - 1, parts.day, parts.hour, parts.minute
   );
 
   const utcAsUTC = Date.UTC(
-    utc.year, utc.month - 1, utc.day,
-    utc.hour, utc.minute
+    utc.year, utc.month - 1, utc.day, utc.hour, utc.minute
   );
 
   return Math.round((localAsUTC - utcAsUTC) / 60000);
