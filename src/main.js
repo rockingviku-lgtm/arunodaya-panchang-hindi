@@ -1,4 +1,5 @@
 import "./style.css";
+import { buildKundli } from "./kundli.js";
 
 const $ = (s) => document.querySelector(s);
 const today = new Date();
@@ -118,7 +119,7 @@ function timing(name,desc,icon){return `<div class="timing-item"><span class="ti
 function renderKundli() {
  return `<div class="page-title"><div class="eyebrow muted">VEDIC ASTROLOGY</div><h2>जन्म कुंडली</h2><p>अपना जन्म विवरण भरें।</p></div>
  <div class="panel"><div class="panel-head"><div><h3>जन्म विवरण</h3><p>सटीक जन्म समय और स्थान महत्वपूर्ण हैं।</p></div><span class="panel-symbol blue-bg">☷</span></div>
- <form id="k-form"><div class="form-grid"><label>नाम (वैकल्पिक)<input id="k-name" placeholder="अपना नाम"></label><label>जन्म तारीख<input id="k-date" type="date" required max="${dateISO(today)}"></label><label>जन्म समय<input id="k-time" type="time" value="12:00" required></label><label>समय क्षेत्र<select id="k-zone"><option value="330">भारत (UTC +05:30)</option><option value="0">UTC</option></select></label><label>जन्म स्थान<input id="k-place" value="Lucknow, India" required></label><label>अक्षांश (Latitude)<input id="k-lat" type="number" value="26.8467" step="any" required></label><label>देशांतर (Longitude)<input id="k-lon" type="number" value="80.9462" step="any" required></label></div><button class="btn primary" type="submit">कुंडली विवरण तैयार करें →</button></form><div id="k-result"></div></div>
+ <form id="k-form"><div class="form-grid"><label>नाम (वैकल्पिक)<input id="k-name" placeholder="अपना नाम"></label><label>जन्म तारीख<input id="k-date" type="date" required max="${dateISO(today)}"></label><label>जन्म समय<input id="k-time" type="time" value="12:00" required></label><label>समय क्षेत्र<select id="k-zone"><option value="330">भारत (UTC +05:30)</option><option value="0">UTC</option></select></label><label>जन्म स्थान<input id="k-place" value="Lucknow, India" required></label><label>अक्षांश (Latitude)<input id="k-lat" type="number" value="26.8467" step="any" required></label><label>देशांतर (Longitude)<input id="k-lon" type="number" value="80.9462" step="any" required></label></div><button class="btn primary" type="submit">Swiss Ephemeris से कुंडली बनाएँ →</button></form><div id="k-result"></div></div>
  <div class="notice compact"><span>ⓘ</span><p>इस शुरुआती संस्करण में वास्तविक ग्रह-स्थिति, लग्न, भाव, नवांश (D9), वक्री और वर्गोत्तम गणना जुड़ी नहीं है। गलत या अनुमानित कुंडली प्रदर्शित करने के बजाय परिणाम को सत्यापित खगोलीय इंजन से जोड़ना आवश्यक है।</p></div>`;
 }
 function render() {
@@ -151,10 +152,16 @@ document.addEventListener("click", e=>{
  }
 });
 $("#global-date").addEventListener("change",e=>{if(e.target.value){setDate(e.target.value);go("panchang");}});
-document.addEventListener("submit",e=>{
+document.addEventListener("submit", async e=>{
  if(e.target.id!=="k-form")return;
  e.preventDefault();
- const d=$("#k-date").value, t=$("#k-time").value;
- $("#k-result").innerHTML=`<div class="result-box"><b>${$("#k-name").value||"जन्म विवरण"} — ${fmtDate(d)} · ${t}</b><p>जन्म विवरण दर्ज हो गए हैं। ग्रहों की डिग्री, लग्न, 12 भाव, नवांश, वक्री और वर्गोत्तम परिणाम देने के लिए सटीक खगोलीय गणना इंजन जोड़ना बाकी है।</p></div>`;
+ const result=$("#k-result");
+ result.innerHTML='<div class="result-box"><b>गणना हो रही है…</b><p>Swiss Ephemeris लोड हो रहा है। पहली बार कुछ समय लग सकता है।</p></div>';
+ const payload={
+   name:$("#k-name").value.trim(), date:$("#k-date").value, time:$("#k-time").value,
+   timezoneMinutes:Number($("#k-zone").value), lat:Number($("#k-lat").value), lon:Number($("#k-lon").value)
+ };
+ try { result.innerHTML=await buildKundli(payload); }
+ catch(err){ console.error(err); result.innerHTML=`<div class="result-box error-box"><b>गणना पूरी नहीं हो सकी</b><p>${String(err?.message||err)}. इंटरनेट कनेक्शन जाँचकर दोबारा कोशिश करें।</p></div>`; }
 });
 setDate(state.date);
