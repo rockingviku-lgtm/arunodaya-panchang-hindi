@@ -15,10 +15,34 @@ const fmtDeg = lon => {
   return `${deg}°${String(min).padStart(2,"0")}′`;
 };
 function navamsaLongitude(longitude) {
-  const lon = norm(longitude), sign = signOf(lon), part = Math.min(8, Math.floor(degInSign(lon)/ (30/9)));
+  // Each 3°20′ segment maps to one Navamsa sign. Keep the within-segment
+  // position scaled by 9 so the D9 longitude retains its degree within sign.
+  const lon = norm(longitude);
+  const sign = signOf(lon);
+  const withinSign = degInSign(lon);
+  const navamsaPart = Math.min(8, Math.floor(withinSign / (30 / 9)));
   const modality = sign % 3; // 0 movable, 1 fixed, 2 dual
-  const start = modality === 0 ? sign : modality === 1 ? (sign + 8) % 12 : (sign + 4) % 12;
-  return norm(start * 30 + (part * 30) + ((degInSign(lon) % (30/9)) * 9));
+  const firstNavamsaSign = modality === 0 ? sign : modality === 1 ? (sign + 8) % 12 : (sign + 4) % 12;
+  const navamsaSign = (firstNavamsaSign + navamsaPart) % 12;
+  const degreeWithinNavamsa = (withinSign - navamsaPart * (30 / 9)) * 9;
+  return norm(navamsaSign * 30 + degreeWithinNavamsa);
+}
+function parseBirthDateTime(dateText, timeText, timezoneMinutes) {
+  if (typeof dateText !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(dateText)) {
+    throw new Error("जन्म तारीख चुनें (दिन-महीना-वर्ष)");
+  }
+  if (typeof timeText !== "string" || !/^\d{2}:\d{2}$/.test(timeText)) {
+    throw new Error("जन्म समय सही भरें");
+  }
+  const [year, month, day] = dateText.split("-").map(Number);
+  const [hour, minute] = timeText.split(":").map(Number);
+  const check = new Date(Date.UTC(year, month - 1, day));
+  if (check.getUTCFullYear() !== year || check.getUTCMonth() !== month - 1 || check.getUTCDate() !== day || hour > 23 || minute > 59) {
+    throw new Error("जन्म तारीख या समय मान्य नहीं है");
+  }
+  // Default to India Standard Time when caller doesn't provide a timezone.
+  const offset = Number.isFinite(timezoneMinutes) ? timezoneMinutes : 330;
+  return new Date(Date.UTC(year, month - 1, day, hour, minute) - offset * 60000);
 }
 function diamondSvg(title, ascSign, planets, note) {
   const byHouse = Array.from({length:12},()=>[]);
@@ -44,20 +68,16 @@ function getPosition(swe,jd,body,short,full) {
  return {short,full,longitude:norm(pos.longitude),speed:pos.longitudeSpeed,retrograde:pos.longitudeSpeed<0};
 }
 export async function buildKundli(input) {
- if(!input.date || !input.time) throw new Error("जन्म तारीख और समय भरें");
- if(!Number.isFinite(input.lat)||!Number.isFinite(input.lon)||Math.abs(input.lat)>90||Math.abs(input.lon)>180) throw new Error("अक्षांश या देशांतर सही नहीं है");
- const [{},] = [{}];
+ if(!input || !input.date || !input.time) throw new Error("जन्म तारीख और समय भरें");
+ if(!Number.isFinite(Number(input.lat))||!Number.isFinite(Number(input.lon))||Math.abs(Number(input.lat))>90||Math.abs(Number(input.lon))>180) throw new Error("अक्षांश या देशांतर सही नहीं है");
+ const utcDate = parseBirthDateTime(input.date, input.time, input.timezoneMinutes);
  const swe = new SwissEphemeris();
  try {
    await swe.init();
    swe.setSiderealMode(SiderealMode.Lahiri);
-   const [year,month,day]=input.date.split("-").map(Number);
-   const [hour,minute]=input.time.split(":").map(Number);
-   const utcMs=Date.UTC(year,month-1,day,hour,minute)-input.timezoneMinutes*60000;
-   const utcDate=new Date(utcMs);
    const jd=swe.dateToJulianDay(utcDate);
    const ayanamsa=swe.getAyanamsa(jd);
-   const houses=swe.calculateHouses(jd,input.lat,input.lon,HouseSystem.WholeSign);
+   const houses=swe.calculateHouses(jd,Number(input.lat),Number(input.lon),HouseSystem.WholeSign);
    const ascendant=norm(houses.ascendant-ayanamsa);
    const planets=PLANETS.map(([short,body])=>getPosition(swe,jd,body,short,({सू:"सूर्य",चं:"चंद्र",मं:"मंगल",बु:"बुध",गु:"गुरु",शु:"शुक्र",श:"शनि"})[short]))
      .map(p=>({...p,longitude:norm(p.longitude-ayanamsa)}));
@@ -68,12 +88,14 @@ export async function buildKundli(input) {
    planets.push(node,{short:"के",full:"केतु",longitude:norm(node.longitude+180),speed:node.speed,retrograde:true});
    const ascSign=signOf(ascendant);
    const moonSign=signOf(planets.find(p=>p.short==="चं").longitude);
-   const d9Planets=planets.map(p=>({...p,longitude:navamsaLongitude(p.longitude)}));
+   const d9Planets=planets.map(p=>({...p,d1Sign:signOf(p.longitude),longitude:navamsaLongitude(p.longitude)}));
    const d9Asc=signOf(navamsaLongitude(ascendant));
    const name=input.name ? `${input.name} — ` : "";
    const dateLabel=new Intl.DateTimeFormat("hi-IN",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(new Date(`${input.date}T12:00:00Z`));
    const meta=`<div class="kundli-meta"><b>${name}${dateLabel} · ${input.time}</b><span>लग्न: ${SIGN_NAMES[ascSign]} (${fmtDeg(ascendant)})</span><span>अयनांश (लाहिरी): ${ayanamsa.toFixed(4)}°</span></div>`;
    const charts=`<div class="kundli-chart-grid">${diamondSvg("जन्म कुंडली (D1)",ascSign,planets,"लग्न-आधारित राशि कुंडली")}${diamondSvg("चंद्र कुंडली",moonSign,planets,"चंद्र राशि को प्रथम भाव मानकर")}${diamondSvg("नवांश कुंडली (D9)",d9Asc,d9Planets,"ग्रहों की नवांश राशि के आधार पर")}</div>`;
+   // Vargottama means the planet occupies the same sign in D1 and D9.
+   // Compare the original sidereal D1 sign with the D9 sign exactly once.
    const vargottama=planets.filter(p=>signOf(p.longitude)===signOf(navamsaLongitude(p.longitude)));
    const extra=`<div class="panel calculation-summary"><h3>अन्य विवरण</h3><div class="summary-pills"><span>लग्न: ${SIGN_NAMES[ascSign]}</span><span>चंद्र राशि: ${SIGN_NAMES[moonSign]}</span><span>वक्री ग्रह: ${planets.filter(p=>p.retrograde).map(p=>p.short).join(", ")||"कोई नहीं"}</span><span>वर्गोत्तम: ${vargottama.map(p=>p.short).join(", ")||"कोई नहीं"}</span></div><p>ग्रहों की राशि और भाव स्थिति जन्म समय, स्थान, समय क्षेत्र तथा लाहिरी अयनांश पर आधारित है।</p></div>`;
    return `${meta}${charts}${planetTable(planets)}${extra}`;
