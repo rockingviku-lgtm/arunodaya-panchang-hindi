@@ -338,7 +338,7 @@ function renderKundli() {
           <label>अक्षांश (Latitude)<input id="k-lat" type="number" min="-90" max="90" step="any" required></label>
           <label>देशांतर (Longitude)<input id="k-lon" type="number" min="-180" max="180" step="any" required></label>
         </div>
-        <button class="btn secondary" type="button" data-action="use-location">📍 मेरी लोकेशन इस्तेमाल करें</button>
+        <button class="btn secondary" type="button" data-action="use-location"मेरी लोकेशन इस्तेमाल करें</button>
         <button class="btn primary" type="submit">कुंडली बनाएँ →</button>
       </form>
       <div id="k-result"></div>
