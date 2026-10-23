@@ -234,12 +234,18 @@ export function buildKundliReportSections(data) {
   `;
 }
 
-export function mountKundliPrintButton({ resultElement, getReportHtml, buttonLabel = "PDF / प्रिंट रिपोर्ट", cssHref = "/src/kundli-pdf.css" } = {}) {
+
+export function mountKundliPrintButton({
+  resultElement,
+  getReportHtml,
+  buttonLabel = "PDF / प्रिंट रिपोर्ट"
+} = {}) {
   if (!resultElement || typeof getReportHtml !== "function") {
     throw new Error("resultElement और getReportHtml देना आवश्यक है।");
   }
 
   let button = resultElement.querySelector("[data-kpdf-print]");
+
   if (!button) {
     button = document.createElement("button");
     button.type = "button";
@@ -250,41 +256,164 @@ export function mountKundliPrintButton({ resultElement, getReportHtml, buttonLab
   }
 
   button.onclick = () => {
-    const html = getReportHtml();
+    let html;
+
+    try {
+      html = getReportHtml();
+    } catch (error) {
+      window.alert("रिपोर्ट बनाने में समस्या हुई: " + (error?.message || error));
+      return;
+    }
+
     if (typeof html !== "string" || !html.trim()) {
-      return window.alert("रिपोर्ट डेटा उपलब्ध नहीं है।");
+      window.alert("रिपोर्ट डेटा उपलब्ध नहीं है।");
+      return;
     }
 
-    const win = window.open("", "_blank", "noopener,noreferrer");
+    const win = window.open("", "_blank");
+
     if (!win) {
-      return window.alert("पॉप-अप ब्लॉक है। वेबसाइट के लिए पॉप-अप अनुमति दें।");
+      window.alert("पॉप-अप ब्लॉक है। ब्राउज़र में पॉप-अप की अनुमति दें।");
+      return;
     }
 
-    const fullHtml = `<!doctype html>
-      <html lang="hi">
-        <head>
-          <meta charset="utf-8" />
-          <meta name="viewport" content="width=device-width,initial-scale=1" />
-          <title>जन्म कुंडली रिपोर्ट</title>
-          <style>${REPORT_CSS}</style>
-        </head>
-        <body class="kpdf-document">
-          <div class="kpdf-shell">${html}</div>
-        </body>
-      </html>`;
+    const doc = win.document;
+    doc.open();
+    doc.write(`<!doctype html>
+<html lang="hi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>जन्म कुंडली रिपोर्ट</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap');
 
-    win.document.open();
-    win.document.write(fullHtml);
-    win.document.close();
-
-    setTimeout(() => {
-      try {
-        win.focus();
-        win.print();
-      } catch (error) {
-        console.warn("Open print dialog failed:", error);
+    body.kpdf-document {
+      margin: 0;
+      background: #f2f3f6;
+      color: #182033;
+      font-family: "Noto Sans Devanagari", "Nirmala UI", sans-serif;
+      font-size: 11pt;
+      line-height: 1.65;
+    }
+    .kpdf-page {
+      max-width: 210mm;
+      margin: 18px auto;
+      padding: 15mm;
+      background: white;
+      box-sizing: border-box;
+    }
+    .kpdf-cover {
+      min-height: 235mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      border: 2px solid #9b6b22;
+      padding: 14mm;
+      box-sizing: border-box;
+      background: linear-gradient(145deg, #fffdf7, #fff6e5);
+    }
+    .kpdf-eyebrow {
+      letter-spacing: 2px;
+      color: #85551a;
+      font-weight: 800;
+    }
+    .kpdf-cover h1 {
+      font-size: 30pt;
+      line-height: 1.35;
+      color: #623b12;
+      margin: 12mm 0 3mm;
+    }
+    .kpdf-cover-meta {
+      margin-top: 18mm;
+      border-top: 1px solid #d9c49e;
+      padding-top: 6mm;
+    }
+    .kpdf-page h2 {
+      color: #623b12;
+      font-size: 17pt;
+      border-bottom: 1px solid #decba8;
+      padding-bottom: 3mm;
+      margin-top: 10mm;
+    }
+    .kpdf-cards {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5mm;
+    }
+    .kpdf-card {
+      border: 1px solid #e2d5bd;
+      border-radius: 3mm;
+      padding: 5mm;
+      break-inside: avoid;
+    }
+    .kpdf-card h3 {
+      margin: 0 0 2mm;
+      font-size: 12pt;
+      color: #6b451c;
+    }
+    .kpdf-status { font-weight: 700; }
+    .kpdf-note, .kpdf-disclaimer {
+      color: #555d6d;
+      font-size: 9pt;
+    }
+    .kpdf-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 4mm 0 8mm;
+    }
+    .kpdf-table th, .kpdf-table td {
+      border: 1px solid #d8dce4;
+      padding: 2.5mm;
+      text-align: left;
+      vertical-align: top;
+    }
+    .kpdf-table th {
+      background: #f7edda;
+      color: #50391d;
+    }
+    @page { size: A4; margin: 12mm; }
+    @media print {
+      body.kpdf-document {
+        background: white;
+        font-size: 10pt;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
       }
-    }, 350);
+      .kpdf-page {
+        max-width: none;
+        margin: 0;
+        padding: 0;
+        box-shadow: none;
+      }
+      .kpdf-cover {
+        min-height: 0;
+        border: 2px solid #9b6b22;
+        padding: 12mm;
+        break-after: page;
+      }
+      .kpdf-cards { break-inside: auto; }
+      .kpdf-card { break-inside: avoid; }
+    }
+    @media screen and (max-width: 640px) {
+      .kpdf-page { margin: 0; padding: 6mm; }
+      .kpdf-cards { grid-template-columns: 1fr; }
+      .kpdf-cover h1 { font-size: 24pt; }
+    }
+  </style>
+</head>
+<body class="kpdf-document">
+  ${html}
+  <script>
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        window.print();
+      }, 700);
+    });
+  <\/script>
+</body>
+</html>`);
+    doc.close();
   };
 
   return button;
