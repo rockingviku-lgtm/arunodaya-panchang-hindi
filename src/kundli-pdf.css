@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap');
+.kpdf-document{margin:0;background:#f2f3f6;color:#182033;font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif;font-size:11pt;line-height:1.65}
+.kpdf-page{max-width:210mm;margin:18px auto;padding:15mm;background:#fff;box-sizing:border-box}
+.kpdf-cover{min-height:235mm;display:flex;flex-direction:column;justify-content:center;border:2px solid #9b6b22;padding:14mm;box-sizing:border-box;background:linear-gradient(145deg,#fffdf7,#fff6e5)}
+.kpdf-eyebrow{letter-spacing:2px;color:#85551a;font-weight:800}
+.kpdf-cover h1{font-size:30pt;line-height:1.35;color:#623b12;margin:12mm 0 3mm}
+.kpdf-cover-meta{margin-top:18mm;border-top:1px solid #d9c49e;padding-top:6mm}
+.kpdf-page h2{color:#623b12;font-size:17pt;border-bottom:1px solid #decba8;padding-bottom:3mm;margin-top:10mm}
+.kpdf-cards{display:grid;grid-template-columns:1fr 1fr;gap:5mm}
+.kpdf-card{border:1px solid #e2d5bd;border-radius:3mm;padding:5mm;break-inside:avoid}
+.kpdf-card h3{margin:0 0 2mm;font-size:12pt;color:#6b451c}
+.kpdf-status{font-weight:700}.kpdf-note,.kpdf-disclaimer{color:#555d6d;font-size:9pt}
+.kpdf-table{width:100%;border-collapse:collapse;margin:4mm 0 8mm}
+.kpdf-table th,.kpdf-table td{border:1px solid #d8dce4;padding:2.5mm;text-align:left;vertical-align:top}
+.kpdf-table th{background:#f7edda;color:#50391d}
+.kpdf-print-button{border:0;border-radius:8px;padding:12px 18px;background:#7b4b15;color:white;font:inherit;font-weight:700;cursor:pointer;margin:14px 0}
+@page{size:A4;margin:12mm}
+@media print{body.kpdf-document{background:white;font-size:10pt;-webkit-print-color-adjust:exact;print-color-adjust:exact}.kpdf-page{max-width:none;margin:0;padding:0;box-shadow:none}.kpdf-cover{min-height:270mm;page-break-after:always}.kpdf-page h2{break-after:avoid}.kpdf-card,.kpdf-table tr{break-inside:avoid}}
+@media(max-width:640px){.kpdf-page{margin:0;padding:6mm}.kpdf-cards{grid-template-columns:1fr}.kpdf-cover h1{font-size:24pt}}
