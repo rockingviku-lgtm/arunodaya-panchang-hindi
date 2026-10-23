@@ -3,10 +3,6 @@ import {
   formatPanchangTime,
   formatPanchangDateTime
 } from "./panchak-engine.js";
-import {
-  renderMuhuratResult,
-  updateMuhuratCards
-} from "./muhurat.js";
 
 export function renderMuhuratResult(data, date, timezoneMinutes = 330) {
   const time = (value) =>
