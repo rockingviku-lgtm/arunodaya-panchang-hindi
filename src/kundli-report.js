@@ -51,11 +51,24 @@ export function calculateSadeSati(moonLongitude, transitSaturnLongitude){
  return {status:"नहीं — चयनित गोचर राशि में साढ़ेसाती नहीं",phase:"शनि चंद्र राशि से 12वीं, 1वीं या 2वीं राशि में नहीं है"};
 }
 function dateLabel(v){if(!v)return "उपलब्ध नहीं";let d=new Date(v+"T12:00:00Z");return Number.isNaN(d.getTime())?v:new Intl.DateTimeFormat("hi-IN",{day:"numeric",month:"long",year:"numeric",timeZone:"UTC"}).format(d);}
+function normalizeBirthTime(data){
+ const candidates=[data?.birthTime,data?.time,data?.birth_time,data?.birthTimeLocal,data?.birth_time_local,data?.input?.birthTime,data?.input?.time,data?.birth?.time,data?.details?.birthTime];
+ for(const value of candidates){
+  if(value===undefined||value===null) continue;
+  const text=String(value).trim();
+  if(!text||/^(unknown|अज्ञात|उपलब्ध नहीं|n\/?a|--|-)$/i.test(text)) continue;
+  const match=text.match(/(?:^|\b)(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if(match){const h=Number(match[1]),m=Number(match[2]),sec=Number(match[3]||0);if(h<=23&&m<=59&&sec<=59)return `${String(h).padStart(2,"0")}:${String(m).padStart(2,"0")}${match[3]!==undefined?":"+String(sec).padStart(2,"0"):""}`;}
+ }
+ return "";
+}
 export function buildKundliReportSections(data){
  if(!data||!Array.isArray(data.planets))throw new Error("कुंडली डेटा उपलब्ध नहीं है।");
+ const birthTime=normalizeBirthTime(data);
+ const birthDateValue=data.birthDate??data.date??data.dob??data.input?.date??data.birth?.date??"";
  const ps=data.planets, asc=Number.isFinite(Number(data.ascendantSign))?Number(data.ascendantSign):sign(data.ascendantLongitude||0);
  const moon=ps.find(p=>p.short==="चं"||p.full==="चंद्र"), ms=Number.isFinite(Number(data.moonSign))?Number(data.moonSign):(moon?sign(moon.longitude):0);
- const meta=[["नाम",data.name||"उपलब्ध नहीं"],["जन्म तिथि",dateLabel(data.date)],["जन्म समय",data.time||"उपलब्ध नहीं"],["जन्म स्थान",data.place||"उपलब्ध नहीं"],["अक्षांश",Number.isFinite(Number(data.lat))?Number(data.lat).toFixed(5)+"°":"उपलब्ध नहीं"],["देशांतर",Number.isFinite(Number(data.lon))?Number(data.lon).toFixed(5)+"°":"उपलब्ध नहीं"],["समय क्षेत्र",Number.isFinite(Number(data.timezoneMinutes))?"UTC"+(data.timezoneMinutes>=0?"+":"")+(Number(data.timezoneMinutes)/60).toFixed(2):"उपलब्ध नहीं"],["अयनांश",fmt(data.ayanamsa)],["लग्न",LAGNA_SYMBOLS[asc]+" "+SIGNS[asc]+" ("+fmt(data.ascendantLongitude)+")"],["चंद्र राशि",SIGNS[ms]]];
+ const meta=[["नाम",data.name||"उपलब्ध नहीं"],["जन्म तिथि",dateLabel(birthDateValue)],["जन्म समय",birthTime||"इनपुट में जन्म समय नहीं मिला"],["जन्म स्थान",data.place||"उपलब्ध नहीं"],["अक्षांश",Number.isFinite(Number(data.lat))?Number(data.lat).toFixed(5)+"°":"उपलब्ध नहीं"],["देशांतर",Number.isFinite(Number(data.lon))?Number(data.lon).toFixed(5)+"°":"उपलब्ध नहीं"],["समय क्षेत्र",Number.isFinite(Number(data.timezoneMinutes))?"UTC"+(data.timezoneMinutes>=0?"+":"")+(Number(data.timezoneMinutes)/60).toFixed(2):"उपलब्ध नहीं"],["अयनांश",fmt(data.ayanamsa)],["लग्न",LAGNA_SYMBOLS[asc]+" "+SIGNS[asc]+" ("+fmt(data.ascendantLongitude)+")"],["चंद्र राशि",SIGNS[ms]]];
  const planetRows=ps.map(p=>{let s=sign(p.longitude),d=deg(p.longitude),n=nak(p.longitude),sun=ps.find(x=>x.short==="सू"),sep=sun?Math.abs(((Number(p.longitude)-Number(sun.longitude)+540)%360)-180):999,lim={"चं":12,"मं":17,"बु":14,"गु":11,"शु":10,"श":15},comb=p.short!=="सू"&&sep<(lim[p.short]||0),ex={"सू":0,"चं":1,"मं":9,"बु":5,"गु":3,"शु":11,"श":6},deb={"सू":6,"चं":7,"मं":3,"बु":11,"गु":9,"शु":5,"श":0};return [pname(p),SIGNS[s],fmt(d),n.name,"पाद "+n.pada,p.retrograde?"वक्री":"मार्गी",comb?"संभावित अस्त":"—",ex[p.short]===s?"उच्च":deb[p.short]===s?"नीच":"सामान्य",d<6?"बाल":d<12?"कुमार":d<18?"युवा":d<24?"वृद्ध":"मृत"];});
  const houses=Array.from({length:12},(_,i)=>[i+1,SIGNS[(asc+i)%12],ps.filter(p=>((sign(p.longitude)-asc+12)%12)===i).map(pname).join(", ")||"—"]);
  const d9ByShort=new Map((data.d9Planets||[]).map(p=>[p.short||p.full,p])); const vargo=ps.filter(p=>{const q=d9ByShort.get(p.short||p.full);return q&&sign(p.longitude)===sign(q.longitude);});
@@ -90,11 +103,11 @@ export function buildKundliReportSections(data){
  const karanaNames=["बव","बालव","कौलव","तैतिल","गर","वणिज","विष्टि","बव","बालव","कौलव","तैतिल","गर","वणिज","विष्टि","बव","बालव","कौलव","तैतिल","गर","वणिज","विष्टि","बव","बालव","कौलव","तैतिल","गर","वणिज","विष्टि","शकुनि","चतुष्पद","नाग","किंस्तुघ्न"];
  const panchang=[["तिथि",tithiLabel],["वार",data.date?new Intl.DateTimeFormat("hi-IN",{weekday:"long",timeZone:"UTC"}).format(new Date(data.date+"T12:00:00Z")):"उपलब्ध नहीं"],["नक्षत्र",moon?nak(moon.longitude).name+" (पाद "+nak(moon.longitude).pada+")":"उपलब्ध नहीं"],["योग",Number.isFinite(yogaNo)?yogaNames[yogaNo]:"गणना हेतु सूर्य/चंद्र डेटा चाहिए"],["करण",Number.isFinite(karanaNo)?(karanaNo>=56?karanaNames[karanaNo-28]:karanaNames[karanaNo%7]):"गणना हेतु सूर्य/चंद्र डेटा चाहिए"]];
  const moonLongitude=moon&&Number.isFinite(Number(moon.longitude))?Number(moon.longitude):NaN;
- const birthDate=String(data.date||"").slice(0,10), timeMatch=String(data.time||"00:00").match(/(\d{1,2}):(\d{2})/);
+ const birthDate=String(birthDateValue||"").slice(0,10), timeMatch=birthTime.match(/(\d{1,2}):(\d{2})(?::(\d{2}))?/);
  const timezoneMinutes=Number.isFinite(Number(data.timezoneMinutes))?Number(data.timezoneMinutes):330;
  let birthUtc=null;
- if(/^\d{4}-\d{2}-\d{2}$/.test(birthDate)&&timeMatch){const localMs=Date.UTC(Number(birthDate.slice(0,4)),Number(birthDate.slice(5,7))-1,Number(birthDate.slice(8,10)),Number(timeMatch[1]),Number(timeMatch[2]));birthUtc=new Date(localMs-timezoneMinutes*60000);}
- const dashaCalc=birthUtc?calculateVimshottariDasha(moonLongitude,birthUtc,new Date()):{ok:false,reason:"जन्म तिथि, समय और समय-क्षेत्र आवश्यक हैं।"};
+ if(/^\d{4}-\d{2}-\d{2}$/.test(birthDate)&&timeMatch){const localMs=Date.UTC(Number(birthDate.slice(0,4)),Number(birthDate.slice(5,7))-1,Number(birthDate.slice(8,10)),Number(timeMatch[1]),Number(timeMatch[2]),Number(timeMatch[3]||0));birthUtc=new Date(localMs-timezoneMinutes*60000);}
+ const dashaCalc=birthUtc?calculateVimshottariDasha(moonLongitude,birthUtc,new Date()):{ok:false,reason:"जन्म तिथि, सही जन्म समय (HH:MM) और समय-क्षेत्र आवश्यक हैं। समय न मिलने पर आधी रात मानकर गलत दशा नहीं बनाई गई।"};
  const periodRows=items=>(items||[]).map(p=>[p.lord,formatDashaDateTime(p.start),formatDashaDateTime(p.end),dashaDurationYears(p)+" वर्ष"]);
  const periodTable=(items)=>table(["दशा स्वामी","आरंभ तिथि / समय","समाप्ति तिथि / समय","अवधि (वर्ष)"],periodRows(items));
  const currentLabel=p=>p?`${p.lord} (${formatDashaDateTime(p.start)} से ${formatDashaDateTime(p.end)})`:"इस गणना-अवधि में उपलब्ध नहीं";
