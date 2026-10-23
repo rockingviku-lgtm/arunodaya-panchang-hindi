@@ -139,6 +139,17 @@ $("#app").innerHTML = `
     <button data-page="calendar">कैलेंडर</button>
     <button data-page="kundli">कुंडली</button>
   </div>
+<a href="/privacy-policy.html">गोपनीयता नीति</a>
+  <a href="/disclaimer.html">अस्वीकरण</a>
+  <a href="/terms-and-conditions.html">नियम एवं शर्तें</a>
+  <a href="/about-us.html">हमारे बारे में</a>
+  <a href="/cookies.html">कुकीज़ नीति</a>
+  <a href="/services.html">हमारी सेवाएँ</a>
+  <a href="/contact-us.html">संपर्क करें</a>
+  <div class="footer-credit">
+    <small>Made In India 🇮🇳</small>
+    <small>Website by Seven Ink Digital Developers Team</small>
+  </div>
   <small class="copyright">©${today.getFullYear()} Arunodaya Panchang · श्रद्धा, ज्ञान और गणना</small>
 </footer>
 
