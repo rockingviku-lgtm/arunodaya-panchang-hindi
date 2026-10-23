@@ -184,7 +184,14 @@ export function buildKundliHtml(data) {
   return `${meta}${charts}${planetTable(data.planets)}${dashaPanel(data.dasha)}${extra}`;
 }
 
-export async function buildKundli(input) {
+
+export async function buildKundliWithData(input) {
   const data = await buildKundliData(input);
-  return buildKundliHtml(data);
+  const html = buildKundliHtml(data);
+  return { data, html };
+}
+
+export async function buildKundli(input) {
+  const result = await buildKundliWithData(input);
+  return result.html;
 }
