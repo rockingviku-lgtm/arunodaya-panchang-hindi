@@ -640,11 +640,20 @@ const data = await calculatePanchang({
     );
   }
 
-if (action === "use-muhurat-location") {
+
+if (
+  action === "use-muhurat-location" ||
+  action === "use-panchang-location"
+) {
   if (!navigator.geolocation) {
     alert("इस ब्राउज़र में GPS सुविधा उपलब्ध नहीं है।");
     return;
   }
+
+  const isMuhurat = action === "use-muhurat-location";
+  const placeInput = $(isMuhurat ? "#m-place" : "#p-place");
+  const result = $(isMuhurat ? "#m-result" : "#p-result");
+  const originalLabel = actionButton.textContent;
 
   actionButton.disabled = true;
   actionButton.textContent = "लोकेशन प्राप्त हो रही है…";
@@ -653,6 +662,9 @@ if (action === "use-muhurat-location") {
     async (position) => {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
+
+      result.dataset.latitude = String(lat);
+      result.dataset.longitude = String(lon);
 
       try {
         const url = new URL(
@@ -663,57 +675,39 @@ if (action === "use-muhurat-location") {
         url.searchParams.set("lon", String(lon));
 
         const response = await fetch(url.toString());
-        if (!response.ok) {
-          throw new Error("स्थान का नाम नहीं मिल पाया।");
-        }
+        if (!response.ok) throw new Error("स्थान का नाम नहीं मिला।");
 
         const data = await response.json();
         const a = data.address || {};
-        const place = [
+        const parts = [
           a.city || a.town || a.village || a.county,
           a.state,
           a.country
         ].filter(Boolean);
 
-        if (place.length) {
-          $("#m-place").value = [...new Set(place)].join(", ");
+        if (parts.length) {
+          placeInput.value = [...new Set(parts)].join(", ");
         }
 
-        const form = $("#m-result");
-        if (form) {
-          form.dataset.latitude = String(lat);
-          form.dataset.longitude = String(lon);
-        }
-
-        alert(
-          "GPS स्थान प्राप्त हो गया। अब मुहूर्त की समय-सारणी देखें।"
-        );
+        alert("GPS लोकेशन प्राप्त हो गई। अब समय-सारणी देखें।");
       } catch (error) {
-        console.error("Muhurat GPS lookup failed:", error);
-        alert(
-          "GPS coordinates मिल गए, लेकिन शहर का नाम नहीं मिल पाया।"
-        );
-
-        const form = $("#m-result");
-        if (form) {
-          form.dataset.latitude = String(lat);
-          form.dataset.longitude = String(lon);
-        }
+        console.warn("GPS reverse geocoding failed:", error);
+        alert("GPS coordinates सेव हैं, लेकिन शहर का नाम नहीं मिल पाया।");
       } finally {
         actionButton.disabled = false;
-        actionButton.textContent = "मेरी लोकेशन इस्तेमाल करें";
+        actionButton.textContent = originalLabel;
       }
     },
     (error) => {
       const messages = {
         1: "लोकेशन की अनुमति नहीं मिली। ब्राउज़र सेटिंग में अनुमति दें।",
         2: "डिवाइस की लोकेशन उपलब्ध नहीं है।",
-        3: "लोकेशन प्राप्त करने में समय समाप्त हो गया। फिर कोशिश करें।"
+        3: "लोकेशन प्राप्त करने में समय समाप्त हो गया।"
       };
 
       alert(messages[error.code] || "लोकेशन प्राप्त नहीं हो सकी।");
       actionButton.disabled = false;
-      actionButton.textContent = "मेरी लोकेशन इस्तेमाल करें";
+      actionButton.textContent = originalLabel;
     },
     {
       enableHighAccuracy: true,
@@ -722,7 +716,7 @@ if (action === "use-muhurat-location") {
     }
   );
 }
-});
+
 
 $("#global-date").addEventListener("change", (e) => {
   if (e.target.value) {
