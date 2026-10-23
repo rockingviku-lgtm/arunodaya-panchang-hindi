@@ -1,5 +1,6 @@
 import "./style.css";
-import { buildKundli } from "./kundli.js";
+import { buildKundli, buildKundliData, buildKundliHtml } from "./kundli.js";
+import { addKundliPdfButton } from "./kundli-pdf.js";
 import { calculatePanchang, geocodePanchangPlace, formatPanchangTime, formatPanchangDateTime } from "./panchak-engine.js";
 import {
   searchBirthPlaces,
@@ -63,7 +64,7 @@ $("#app").innerHTML = `
   <section class="hero" id="hero">
     <div class="eyebrow"><span class="sun-dot"></span> आपका दैनिक वैदिक कैलेंडर</div>
     <h1>समय को जानें,<br><span>शुभता के साथ आगे बढ़ें।</span></h1>
-    <p>दैनिक पंचांग, हिंदू कैलेंडर, मुहूर्त और जन्म कुंडली — एक ही जगह, आपके मोबाइल के लिए बनाया गया।</p>
+    <p>दैनिक पंचांग, हिंदू कैलेंडर, मुहूर्त और जन्म कुंडली — एक ही जगह, आपके मोबाइल पर।</p>
     <div class="hero-actions">
       <button class="btn primary" data-page="panchang">आज का पंचांग देखें <span>→</span></button>
       <button class="btn secondary" data-page="calendar">हिंदू कैलेंडर खोलें</button>
@@ -121,7 +122,7 @@ $("#app").innerHTML = `
 
   <section class="notice">
     <span>ⓘ</span>
-    <p><b>गणना संबंधी सूचना:</b> पंचांग, तिथि, नक्षत्र, सूर्योदय और मुहूर्त के परिणामों को प्रमाणित खगोलीय गणना से सत्यापित करना आवश्यक है।</p>
+    <p><b>गणना संबंधी सूचना:</b> पंचांग, तिथि, नक्षत्र, सूर्योदय और मुहूर्त के परिणाम स्थानीय गणना और ऊष्म-तिथि मान पर आधारित हैं।</p>
   </section>
 </main>
 
@@ -139,7 +140,7 @@ $("#app").innerHTML = `
     <button data-page="calendar">कैलेंडर</button>
     <button data-page="kundli">कुंडली</button>
   </div>
-<a href="/privacy-policy.html">गोपनीयता नीति</a>
+  <a href="/privacy-policy.html">गोपनीयता नीति</a>
   <a href="/disclaimer.html">अस्वीकरण</a>
   <a href="/terms-and-conditions.html">नियम एवं शर्तें</a>
   <a href="/about-us.html">हमारे बारे में</a>
@@ -246,18 +247,15 @@ function renderPanchang() {
       <div class="form-grid">
         <label>पंचांग की तारीख<input id="p-date" type="date" value="${state.date}"></label>
         <label>समय<input id="p-time" type="time" value="12:00"></label>
-        <label>स्थान / शहर<input id="p-place" value="Lucknow, India"></label><button
-  class="btn secondary"
-  type="button"
-  data-action="use-panchang-location"
-  style="margin-top: 12px; width: 100%;"
->मेरी लोकेशन इस्तेमाल करें</button>
+        <label>स्थान / शहर<input id="p-place" value="Lucknow, India"></label>
+        <button class="btn secondary" type="button" data-action="use-panchang-location" style="margin-top: 12px; width: 100%;">मेरी लोकेशन इस्तेमाल करें</button>
         <label>समय क्षेत्र<select id="p-zone"><option value="330">भारत (UTC +05:30)</option><option value="0">UTC</option></select></label>
       </div>
       <button class="btn primary" data-action="show-panchang">चुनी तारीख का पंचांग देखें →</button>
       <div id="p-result"></div>
     </div>
-    <div class="notice compact"><span>ⓘ</span><p>सटीक तिथि, नक्षत्र और मुहूर्त के लिए सत्यापित खगोलीय गणना आवश्यक है।</p></div>`;
+    <div class="notice compact"><span>ⓘ</span><p>सटीक तिथि, नक्षत्र और मुहूर्त के लिए सत्यापित खगोलीय गणना और स्थल डेटा का प्रयोग किया जाता है।</p></div>
+  `;
 }
 
 function renderCalendar() {
@@ -284,7 +282,7 @@ function renderCalendar() {
   }
 
   return `
-    <div class="page-title"><div class="eyebrow muted">HINDU CALENDAR</div><h2>हिंदू कैलेंडर</h2><p>किसी भी तारीख पर टैप करके उसे चुनें।</p></div>
+    <div class="page-title"><div class="eyebrow muted">HINDU CALENDAR</div><h2>हिंदू कैलेंडर</h2><p>किसी भी तारीख पर टैप करके उजागर जानकारी देखें।</p></div>
     <div class="panel calendar-panel">
       <div class="calendar-toolbar">
         <button class="icon-btn" data-action="prev-month">‹</button>
@@ -295,7 +293,7 @@ function renderCalendar() {
       <div class="calendar-legend"><span><i class="legend-dot"></i> आज</span><span><i class="legend-dot gold-dot"></i> चुनी गई तारीख</span></div>
     </div>
     <div class="panel selected-date-panel">
-      <div><small>चुनी गई तारीख</small><h3>${fmtDate(state.date)}</h3><p>इस तारीख का विवरण देखने के लिए पंचांग खोलें।</p></div>
+      <div><small>चुनी गई तारीख</small><h3>${fmtDate(state.date)}</h3><p>इस तारीख का विवरण देखने के लिए पंचांग देखें।</p></div>
       <button class="btn primary" data-page="panchang">पंचांग देखें →</button>
     </div>`;
 }
@@ -303,7 +301,6 @@ function renderCalendar() {
 function timing(name, desc, icon) {
   return `<div class="timing-item"><span class="timing-icon">${icon}</span><div><b>${name}</b><small>${desc}</small></div><span class="timing-status">जल्द उपलब्ध</span></div>`;
 }
-
 
 function renderMuhurat() {
   return `
@@ -334,20 +331,8 @@ function renderMuhurat() {
         </label>
       </div>
 
-      <button
-        class="btn secondary"
-        type="button"
-        data-action="use-muhurat-location"
-        style="margin-top: 12px; width: 100%;"
-      >मेरी लोकेशन इस्तेमाल करें</button>
-
-      <button
-        class="btn primary"
-        type="button"
-        data-action="show-muhurat"
-        style="margin-top: 12px;"
-      >समय-सारणी देखें →</button>
-
+      <button class="btn secondary" type="button" data-action="use-muhurat-location" style="margin-top: 12px; width: 100%;">मेरी लोकेशन इस्तेमाल करें</button>
+      <button class="btn primary" type="button" data-action="show-muhurat" style="margin-top: 12px;">समय-सारणी देखें →</button>
       <div id="m-result"></div>
     </div>
 
@@ -359,7 +344,6 @@ function renderMuhurat() {
     </div>`;
 }
 
-
 function renderKundli() {
   return `
     <div class="page-title">
@@ -367,7 +351,7 @@ function renderKundli() {
       <h2>जन्म कुंडली</h2><p>अपना जन्म विवरण भरें।</p>
     </div>
     <div class="panel">
-      <div class="panel-head"><div><h3>जन्म विवरण</h3><p>सटीक जन्म समय और जन्मस्थान भरें।</p></div><span class="panel-symbol blue-bg">☷</span></div>
+      <div class="panel-head"><div><h3>जन्म विवरण</h3><p>सटीक जन्म समय और जन्मस्थान भरें।</p></div><span class="panel-symbol">☷</span></div>
       <form id="k-form">
         <div class="form-grid">
           <label>नाम (वैकल्पिक)<input id="k-name" placeholder="अपना नाम"></label>
@@ -390,7 +374,7 @@ function renderKundli() {
           <label>अक्षांश (Latitude)<input id="k-lat" type="number" min="-90" max="90" step="any" required></label>
           <label>देशांतर (Longitude)<input id="k-lon" type="number" min="-180" max="180" step="any" required></label>
         </div>
-     <button class="btn primary" type="submit">कुंडली बनाएँ →</button>
+        <button class="btn primary" type="submit">कुंडली बनाएँ →</button>
       </form>
       <div id="k-result"></div>
     </div>`;
@@ -543,40 +527,40 @@ document.addEventListener("click", async (e) => {
     result.innerHTML = `<div class="result-box"><p>खगोलीय गणना और स्थान खोजे जा रहे हैं…</p></div>`;
     try {
       const savedLat = result.dataset.latitude;
-const savedLon = result.dataset.longitude;
+      const savedLon = result.dataset.longitude;
 
-let place;
+      let place;
 
-if (
-  savedLat !== undefined &&
-  savedLon !== undefined &&
-  savedLat !== "" &&
-  savedLon !== ""
-) {
-  place = {
-    lat: Number(savedLat),
-    lon: Number(savedLon),
-    name: placeInput.value.trim() || "GPS Location"
-  };
-} else {
-  place = await geocodePanchangPlace(
-    placeInput.value || "Lucknow, India"
-  );
-}
+      if (
+        savedLat !== undefined &&
+        savedLon !== undefined &&
+        savedLat !== "" &&
+        savedLon !== ""
+      ) {
+        place = {
+          lat: Number(savedLat),
+          lon: Number(savedLon),
+          name: placeInput.value.trim() || "GPS Location"
+        };
+      } else {
+        place = await geocodePanchangPlace(
+          placeInput.value || "Lucknow, India"
+        );
+      }
 
-const data = await calculatePanchang({
-  date: d,
-  lat: place.lat,
-  lon: place.lon,
-  timezoneMinutes: offset,
-  place: place.name
-});
+      const data = await calculatePanchang({
+        date: d,
+        lat: place.lat,
+        lon: place.lon,
+        timezoneMinutes: offset,
+        place: place.name
+      });
       const time = value => formatPanchangTime(value, offset);
       const dateTime = value => formatPanchangDateTime(value, offset);
       const item = (label, value, end) => `<div class="summary-pill"><small>${label}</small><b>${value}</b>${end ? `<span>समाप्ति: ${dateTime(end)}</span>` : ""}</div>`;
-      const period = (label, value) => `<div class="timing-item"><span class="timing-icon">◷</span><div><b>${label}</b><small>${value ? `${time(value.start)} – ${time(value.end)}` : "इस तारीख के लिए गणना उपलब्ध नहीं"}</small></div></div>`;
-      const panchakText = data.panchak.active ? `पंचक चल रहा है${data.panchak.end ? ` · समाप्ति ${dateTime(data.panchak.end)}` : ""}` : `पंचक नहीं चल रहा${data.panchak.start ? ` · अगली शुरुआत ${dateTime(data.panchak.start)}` : ""}`;
-      const common = `<div class="result-box"><h3>${fmtDate(d)}</h3><p>${data.place} · ${data.weekday}</p><div class="facts-grid">${item("तिथि", `${data.tithi.name} (${data.tithi.paksha})`, data.tithi.end)}${item("नक्षत्र", `${data.nakshatra.name} · पद ${data.nakshatra.pada}`, data.nakshatra.end)}${item("योग", data.yoga.name, data.yoga.end)}${item("करण", data.karana.name, data.karana.end)}${item("सूर्योदय", time(data.sunrise))}${item("सूर्यास्त", time(data.sunset))}</div><p><b>पंचक:</b> ${panchakText}</p><p class="muted">${data.accuracyNote}</p></div>`;
+      const period = (label, value) => `<div class="timing-item"><span class="timing-icon">◷</span><div><b>${label}</b><small>${value ? `${time(value.start)} – ${time(value.end)}` : "इस समय का विवरण उपलब्ध नहीं है"}</small></div></div>`;
+      const panchakText = data.panchak.active ? `पंचक चल रहा है${data.panchak.end ? ` · समाप्ति ${dateTime(data.panchak.end)}` : ""}` : "पंचक नहीं चल रहा है";
+      const common = `<div class="result-box"><h3>${fmtDate(d)}</h3><p>${data.place} · ${data.weekday}</p><div class="facts-grid">${item("तिथि", `${data.tithi.name} (${data.tithi.paksha})`, data.tithi.end)}${item("नक्षत्र", `${data.nakshatra.name} (${data.nakshatra.pada})`, data.nakshatra.end)}${item("योग", data.yoga.name, data.yoga.end)}${item("करण", data.karana.name, data.karana.end)}</div><div class="summary-text">${panchakText}</div>${period("सुबह", data.sunrise)}${period("सूर्यास्त", data.sunset)}</div>`;
       if (isPanchang) {
         result.innerHTML = common;
         state.date = d;
@@ -584,12 +568,12 @@ const data = await calculatePanchang({
         $("#today-date").textContent = fmtDate(d, { day: "numeric", month: "long", year: "numeric" });
         $("#today-meta").textContent = `${data.weekday} · ${data.place}`;
       } else {
-  result.innerHTML = renderMuhuratResult(data, d, offset);
-  updateMuhuratCards(data, offset);
-}
+        result.innerHTML = renderMuhuratResult(data, d, offset);
+        updateMuhuratCards(data, offset);
+      }
     } catch (error) {
       console.error("Panchang calculation failed:", error);
-      result.innerHTML = `<div class="result-box"><b>गणना पूरी नहीं हो सकी</b><p>${String(error?.message || "अज्ञात त्रुटि").replace(/[<>]/g, "")}</p><p>इंटरनेट कनेक्शन और शहर का नाम जाँचें, फिर दोबारा कोशिश करें।</p></div>`;
+      result.innerHTML = `<div class="result-box"><b>गणना पूरी नहीं हो सकी</b><p>${String(error?.message || "अज्ञात त्रुटि")}</p></div>`;
     } finally {
       actionButton.disabled = false;
       actionButton.textContent = originalLabel;
@@ -623,18 +607,16 @@ const data = await calculatePanchang({
           if (!response.ok) throw new Error("स्थान का नाम नहीं मिल पाया।");
           const data = await response.json();
           const a = data.address || {};
-          const place = [a.city || a.town || a.village || a.county, a.state, a.country]
-            .filter(Boolean);
+          const place = [a.city || a.town || a.village || a.county, a.state, a.country].filter(Boolean);
           if (place.length) $("#k-place").value = [...new Set(place)].join(", ");
-          $("#k-place-status").textContent =
-            "GPS स्थान भरा गया है। कुंडली बनाने के लिए जन्मस्थान को खोजकर सूची से चुनें।";
+          $("#k-place-status").textContent = "GPS स्थान भरा गया है। कुंडली बनाने के लिए जन्मस्थान को खोजकर सूची से चुनें।";
           alert("वर्तमान GPS coordinates भर दिए गए हैं। जन्मस्थान अलग है तो उसे खोजकर सूची से चुनें।");
         } catch (err) {
           console.warn("Reverse geocoding failed:", err);
           alert("Coordinates भर दिए गए हैं, लेकिन स्थान का नाम प्राप्त नहीं हुआ।");
         } finally {
           actionButton.disabled = false;
-          actionButton.textContent = " मेरी लोकेशन इस्तेमाल करें";
+          actionButton.textContent = "मेरी लोकेशन इस्तेमाल करें";
         }
       },
       (err) => {
@@ -645,86 +627,85 @@ const data = await calculatePanchang({
         };
         alert(messages[err.code] || "लोकेशन प्राप्त नहीं हो सकी।");
         actionButton.disabled = false;
-        actionButton.textContent = " मेरी लोकेशन इस्तेमाल करें";
+        actionButton.textContent = "मेरी लोकेशन इस्तेमाल करें";
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
   }
 
+  if (
+    action === "use-muhurat-location" ||
+    action === "use-panchang-location"
+  ) {
+    if (!navigator.geolocation) {
+      alert("इस ब्राउज़र में GPS सुविधा उपलब्ध नहीं है।");
+      return;
+    }
 
-if (
-  action === "use-muhurat-location" ||
-  action === "use-panchang-location"
-) {
-  if (!navigator.geolocation) {
-    alert("इस ब्राउज़र में GPS सुविधा उपलब्ध नहीं है।");
-    return;
-  }
+    const isMuhurat = action === "use-muhurat-location";
+    const placeInput = $(isMuhurat ? "#m-place" : "#p-place");
+    const result = $(isMuhurat ? "#m-result" : "#p-result");
+    const originalLabel = actionButton.textContent;
 
-  const isMuhurat = action === "use-muhurat-location";
-  const placeInput = $(isMuhurat ? "#m-place" : "#p-place");
-  const result = $(isMuhurat ? "#m-result" : "#p-result");
-  const originalLabel = actionButton.textContent;
+    actionButton.disabled = true;
+    actionButton.textContent = "लोकेशन प्राप्त हो रही है…";
 
-  actionButton.disabled = true;
-  actionButton.textContent = "लोकेशन प्राप्त हो रही है…";
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
 
-  navigator.geolocation.getCurrentPosition(
-    async (position) => {
-      const lat = position.coords.latitude;
-      const lon = position.coords.longitude;
+        result.dataset.latitude = String(lat);
+        result.dataset.longitude = String(lon);
 
-      result.dataset.latitude = String(lat);
-      result.dataset.longitude = String(lon);
+        try {
+          const url = new URL(
+            "https://nominatim.openstreetmap.org/reverse"
+          );
+          url.searchParams.set("format", "jsonv2");
+          url.searchParams.set("lat", String(lat));
+          url.searchParams.set("lon", String(lon));
 
-      try {
-        const url = new URL(
-          "https://nominatim.openstreetmap.org/reverse"
-        );
-        url.searchParams.set("format", "jsonv2");
-        url.searchParams.set("lat", String(lat));
-        url.searchParams.set("lon", String(lon));
+          const response = await fetch(url.toString());
+          if (!response.ok) throw new Error("स्थान का नाम नहीं मिला।");
 
-        const response = await fetch(url.toString());
-        if (!response.ok) throw new Error("स्थान का नाम नहीं मिला।");
+          const data = await response.json();
+          const a = data.address || {};
+          const parts = [
+            a.city || a.town || a.village || a.county,
+            a.state,
+            a.country
+          ].filter(Boolean);
 
-        const data = await response.json();
-        const a = data.address || {};
-        const parts = [
-          a.city || a.town || a.village || a.county,
-          a.state,
-          a.country
-        ].filter(Boolean);
+          if (parts.length) {
+            placeInput.value = [...new Set(parts)].join(", ");
+          }
 
-        if (parts.length) {
-          placeInput.value = [...new Set(parts)].join(", ");
+          alert("GPS लोकेशन प्राप्त हो गई। अब समय-सारणी देखें।");
+        } catch (error) {
+          console.warn("GPS reverse geocoding failed:", error);
+          alert("GPS coordinates सेव हैं, लेकिन शहर का नाम नहीं मिल पाया।");
+        } finally {
+          actionButton.disabled = false;
+          actionButton.textContent = originalLabel;
         }
+      },
+      (error) => {
+        const messages = {
+          1: "लोकेशन की अनुमति नहीं मिली। ब्राउज़र सेटिंग में अनुमति दें।",
+          2: "डिवाइस की लोकेशन उपलब्ध नहीं है।",
+          3: "लोकेशन प्राप्त करने में समय समाप्त हो गया।"
+        };
 
-        alert("GPS लोकेशन प्राप्त हो गई। अब समय-सारणी देखें।");
-      } catch (error) {
-        console.warn("GPS reverse geocoding failed:", error);
-        alert("GPS coordinates सेव हैं, लेकिन शहर का नाम नहीं मिल पाया।");
-      } finally {
+        alert(messages[error.code] || "लोकेशन प्राप्त नहीं हो सकी।");
         actionButton.disabled = false;
         actionButton.textContent = originalLabel;
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 60000
       }
-    },
-    (error) => {
-      const messages = {
-        1: "लोकेशन की अनुमति नहीं मिली। ब्राउज़र सेटिंग में अनुमति दें।",
-        2: "डिवाइस की लोकेशन उपलब्ध नहीं है।",
-        3: "लोकेशन प्राप्त करने में समय समाप्त हो गया।"
-      };
-
-      alert(messages[error.code] || "लोकेशन प्राप्त नहीं हो सकी।");
-      actionButton.disabled = false;
-      actionButton.textContent = originalLabel;
-    },
-    {
-      enableHighAccuracy: true,
-      timeout: 15000,
-      maximumAge: 60000
-    }
     );
   }
 });
@@ -798,7 +779,8 @@ document.addEventListener("submit", async (e) => {
       time,
       timezoneMinutes,
       lat,
-      lon
+      lon,
+      place: selectedBirthPlace.name
     };
 
     result.innerHTML = `
@@ -811,14 +793,25 @@ document.addEventListener("submit", async (e) => {
     const timeout = new Promise((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error(
-          "30 सेकंड में गणना पूरी नहीं हुई। src/kundli.js में Swiss Ephemeris की loading जाँचनी होगी।"
+          "30 सेकंड में गणना पूरी नहीं हुई। Swiss Ephemeris की loading जाँचनी होगी।"
         ));
       }, 30000);
     });
 
     try {
-      const html = await Promise.race([buildKundli(payload), timeout]);
-      result.innerHTML = html;
+      const kundliData = await Promise.race([buildKundliData(payload), timeout]);
+      result.dataset.kundliData = JSON.stringify(kundliData);
+      result.innerHTML = buildKundliHtml(kundliData);
+
+      addKundliPdfButton(result, () => {
+        const raw = result.dataset.kundliData;
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      });
     } finally {
       clearTimeout(timeoutId);
     }
