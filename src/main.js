@@ -1,5 +1,9 @@
 import "./style.css";
-import { buildKundli } from "./kundli.js";
+import {
+  buildKundli,
+  buildKundliData,
+  buildKundliHtml
+} from "./kundli.js";
 import { calculatePanchang, geocodePanchangPlace, formatPanchangTime, formatPanchangDateTime } from "./panchak-engine.js";
 import {
   searchBirthPlaces,
@@ -818,10 +822,8 @@ document.addEventListener("submit", async (e) => {
 
     try {
       
-const { html, data } = await Promise.race([
-  buildKundliWithData(payload),
-  timeout
-]);
+const reportData = await buildKundliData(payload);
+const html = buildKundliHtml(reportData);
 result.innerHTML = html;
 addKundliPdfButton(result, () => data);
 } finally {
