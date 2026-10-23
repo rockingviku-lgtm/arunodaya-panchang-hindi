@@ -55,3 +55,18 @@ h2{font-size:26px}footer{padding:25px 15px 90px;grid-template-columns:1fr;gap:14
   font-size: 11px;
 }
 .footer-credit small { display: block; }
+
+/* Arunodaya Panchang - policy page links */
+a {
+  color: #ffdc78;
+  text-decoration: none;
+}
+
+a:visited {
+  color: #e9bd55;
+}
+
+a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
