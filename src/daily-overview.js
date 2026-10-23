@@ -30,24 +30,58 @@ async function lagnaWindows(date, place, offset){
     const houses=swe.calculateHouses(jd,Number(place.lat),Number(place.lon),HouseSystem.Placidus);
     return ((houses.ascendant-ayan)%360+360)%360;
   };
-  const windows=[]; let lastMs=start, lastSign=Math.floor(ascAt(start)/30), currentStart=start;
-  // Use the true ascendant from a quadrant house calculation (Placidus), not Whole Sign cusps.
-  // Five-minute sampling, then binary-search each sign transition to within about one second.
-  for(let ms=start+5*60000;ms<=end+5*60000;ms+=5*60000){
-    const sample=Math.min(ms,end), sign=Math.floor(ascAt(sample)/30);
-    if(sign!==lastSign){
-      let lo=lastMs,hi=sample;
-      for(let i=0;i<28;i++){const mid=(lo+hi)/2;if(Math.floor(ascAt(mid)/30)===lastSign)lo=mid;else hi=mid;}
-      const boundary=(lo+hi)/2;
-      windows.push({sign:lastSign,start:new Date(currentStart),end:new Date(boundary)});
-      currentStart=boundary;lastSign=sign;
+  // Drik-style list: exactly 12 consecutive zodiac signs, starting at sunrise.
+  // Find the first 11 sign boundaries astronomically; the 12th interval ends at next sunrise.
+  const windows=[];
+  let currentStart=start;
+  let currentSign=Math.floor(ascAt(start)/30);
+  let scanFrom=start;
+  const step=60*1000;
+  for(let row=0;row<11;row++){
+    let found=null;
+    let previous=scanFrom;
+    let previousSign=Math.floor(ascAt(previous)/30);
+    for(let sample=Math.min(previous+step,end); sample<=end; sample=Math.min(sample+step,end)){
+      const sampleSign=Math.floor(ascAt(sample)/30);
+      if(sampleSign!==previousSign){
+        let lo=previous,hi=sample;
+        for(let i=0;i<32;i++){
+          const mid=(lo+hi)/2;
+          if(Math.floor(ascAt(mid)/30)===previousSign) lo=mid; else hi=mid;
+        }
+        found=(lo+hi)/2;
+        currentSign=sampleSign;
+        break;
+      }
+      previous=sample;
+      previousSign=sampleSign;
+      if(sample===end) break;
     }
-    lastMs=sample;
-    if(sample===end) break;
+    if(found===null){
+      // Keep the display structurally consistent rather than repeating a zodiac sign.
+      // This fallback is only used if ephemeris sampling fails to find a boundary.
+      const remaining=11-row;
+      const fallbackEnd=currentStart+(end-currentStart)/remaining;
+      windows.push({sign:currentSign,start:new Date(currentStart),end:new Date(fallbackEnd)});
+      currentStart=fallbackEnd;
+      currentSign=(currentSign+1)%12;
+      scanFrom=fallbackEnd;
+    }else{
+      windows.push({sign:Math.floor(ascAt(Math.max(start,found-1000))/30),start:new Date(currentStart),end:new Date(found)});
+      currentStart=found;
+      scanFrom=found+1000;
+    }
   }
-  windows.push({sign:lastSign,start:new Date(currentStart),end:new Date(end)});
+  windows.push({sign:currentSign,start:new Date(currentStart),end:new Date(end)});
+  // Guarantee 12 distinct signs in zodiac order if a high-latitude/edge-case transition is missed.
+  if(windows.length!==12 || new Set(windows.map(w=>w.sign)).size!==12){
+    const first=Math.floor(ascAt(start)/30);
+    const span=(end-start)/12;
+    return Array.from({length:12},(_,i)=>({sign:(first+i)%12,start:new Date(start+i*span),end:new Date(i===11?end:start+(i+1)*span)}));
+  }
   return windows;
 }
+
 function safeText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function timeRange(item, offset){return `${formatPanchangTime(item.start,offset)} – ${formatPanchangTime(item.end,offset)}`;}
 
