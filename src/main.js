@@ -235,7 +235,12 @@ function renderPanchang() {
       <div class="form-grid">
         <label>पंचांग की तारीख<input id="p-date" type="date" value="${state.date}"></label>
         <label>समय<input id="p-time" type="time" value="12:00"></label>
-        <label>स्थान / शहर<input id="p-place" value="Lucknow, India"></label>
+        <label>स्थान / शहर<input id="p-place" value="Lucknow, India"></label><button
+  class="btn secondary"
+  type="button"
+  data-action="use-panchang-location"
+  style="margin-top: 12px; width: 100%;"
+>मेरी लोकेशन इस्तेमाल करें</button>
         <label>समय क्षेत्र<select id="p-zone"><option value="330">भारत (UTC +05:30)</option><option value="0">UTC</option></select></label>
       </div>
       <button class="btn primary" data-action="show-panchang">चुनी तारीख का पंचांग देखें →</button>
