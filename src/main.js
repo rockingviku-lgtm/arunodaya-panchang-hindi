@@ -817,11 +817,17 @@ document.addEventListener("submit", async (e) => {
     });
 
     try {
-      const html = await Promise.race([buildKundli(payload), timeout]);
-      result.innerHTML = html;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+      
+const { html, data } = await Promise.race([
+  buildKundliWithData(payload),
+  timeout
+]);
+result.innerHTML = html;
+addKundliPdfButton(result, () => data);
+} finally {
+  clearTimeout(timeoutId);
+}
+
   } catch (err) {
     console.error("Kundli calculation failed:", err);
     result.innerHTML = `
