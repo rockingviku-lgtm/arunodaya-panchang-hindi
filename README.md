@@ -1,25 +1,19 @@
-# Arunodaya Panchang — Swiss Ephemeris Kundli update
+ARUNODAYA PANCHANG — Sade Sati Engine integration
 
-This update preserves the supplied Vite starter pages and adds a browser-side Swiss Ephemeris calculation flow for the Kundli form.
+Files to copy into the existing Vite project's src/ folder:
+- sade-sati-engine.js (new engine)
+- kundli-report.js (updated report; keep the matching report file from this bundle)
+- kundli-pdf.js (updated PDF integration; keep the matching file from this bundle)
+- kundli-pdf.css (same stylesheet used by this report)
 
-## Included
-- Birth chart (D1), Chandra Kundli, and Navamsa (D9) in a North Indian diamond-style layout.
-- Rashi numbers and short Hindi planet labels in chart houses.
-- Lahiri sidereal adjustment, ascendant, planet positions, retrograde indicator, and a planet position table.
-- Birth form uses the selected timezone offset and entered coordinates.
+What changed:
+- PDF generation now calculates geocentric Saturn transit for the selected date (default: current date) using the existing @swisseph/browser ephemeris and Lahiri ayanamsa.
+- Calculation date uses 12:00 UTC to avoid ambiguous local time.
+- Sade Sati is determined by whether transit Saturn is in the 12th, 1st, or 2nd sign from natal Moon sign, and prints a clear Yes/No plus phase and transit sign.
+- If the ephemeris fails, the PDF reports a calculation error instead of silently claiming a result.
 
-## Build / deploy
-1. Upload these files to the GitHub repository, keeping the folder paths unchanged.
-2. Cloudflare Pages build command: `npm install && npm run build`
-3. Build output directory: `dist`
+Note: The report data should include the natal Moon in `data.planets` with `short: "चं"` and its sidereal `longitude`. The existing app already uses @swisseph/browser. The PDF button now opens an interim loading page while the async transit calculation completes.
 
-## Important limitations
-- This starter still does not calculate a full verified daily Panchang or Muhurat; those pages remain placeholders.
-- The browser package's built-in Moshier ephemeris is used unless optional Swiss ephemeris data files are configured. Verify calculations against trusted chart software and known test charts before relying on them.
-- Rahu uses Mean Node where available (True Node fallback); Ketu is set exactly opposite Rahu.
-- Vargottama is determined by comparing the D1 sign with the calculated D9 sign.
-- This implementation has been syntax-checked, but a full Vite production build could not be completed in this environment because dependency installation timed out. Run the build on GitHub/Cloudflare after upload and check the browser console.
-- `@swisseph/browser` is published under AGPL-3.0. Review its license obligations before distributing or commercially operating the website.
-
-## Dependency
-`@swisseph/browser` (1.4.x)
+Footer preserved:
+PDF created via Kundali maker at ARUNODAYA PANCHANG website
+©2026. ARUNODAYA PANCHANG All Right Reserved
