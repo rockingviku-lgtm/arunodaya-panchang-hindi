@@ -1,5 +1,5 @@
 import { calculatePanchang, geocodePanchangPlace, formatPanchangTime, formatPanchangDateTime } from './panchak-engine.js';
-import { SwissEphemeris, HouseSystem, SiderealMode } from '@swisseph/browser';
+import { SwissEphemeris, HouseSystem, SiderealMode, Planet } from '@swisseph/browser';
 
 const SIGNS = ['मेष','वृषभ','मिथुन','कर्क','सिंह','कन्या','तुला','वृश्चिक','धनु','मकर','कुंभ','मीन'];
 const $ = (s) => document.querySelector(s);
@@ -50,6 +50,68 @@ async function lagnaWindows(date, place, offset){
 function safeText(value){return String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function timeRange(item, offset){return `${formatPanchangTime(item.start,offset)} – ${formatPanchangTime(item.end,offset)}`;}
 
+const TITHI_NAMES = ['प्रतिपदा','द्वितीया','तृतीया','चतुर्थी','पञ्चमी','षष्ठी','सप्तमी','अष्टमी','नवमी','दशमी','एकादशी','द्वादशी','त्रयोदशी','चतुर्दशी','पूर्णिमा'];
+const LUNAR_MONTHS = ['वैशाख','ज्येष्ठ','आषाढ़','श्रावण','भाद्रपद','आश्विन','कार्तिक','मार्गशीर्ष','पौष','माघ','फाल्गुन','चैत्र'];
+function norm360(n){return ((n%360)+360)%360;}
+function lunarMonthAtDate(date, place, offset){
+  return getSwe().then(swe=>{
+    const [y,m,d]=date.split('-').map(Number);
+    const ref=new Date(Date.UTC(y,m-1,d,12)-offset*60000);
+    const sunMoonAngle=dt=>{const jd=swe.dateToJulianDay(dt);const ayan=swe.getAyanamsa(jd);const sun=swe.calculatePosition(jd,Planet.Sun).longitude-ayan;const moon=swe.calculatePosition(jd,Planet.Moon).longitude-ayan;return norm360(moon-sun);};
+    let later=new Date(ref), laterAngle=sunMoonAngle(later), bracket=null;
+    for(let hours=6;hours<=36*24;hours+=6){const earlier=new Date(ref.getTime()-hours*3600000), a=sunMoonAngle(earlier);if(laterAngle<180 && a>=180){bracket={lo:earlier.getTime(),hi:later.getTime()};break;}later=earlier;laterAngle=a;}
+    if(!bracket) return null;
+    let lo=bracket.lo,hi=bracket.hi;
+    for(let i=0;i<42;i++){const mid=(lo+hi)/2;if(sunMoonAngle(new Date(mid))>=180)lo=mid;else hi=mid;}
+    const newMoon=new Date((lo+hi)/2), jd=swe.dateToJulianDay(newMoon), ayan=swe.getAyanamsa(jd);
+    const sunSign=Math.floor(norm360(swe.calculatePosition(jd,Planet.Sun).longitude-ayan)/30);
+    // Amanta month name is associated with the next sidereal solar sign after the sign at new moon.
+    return LUNAR_MONTHS[sunSign];
+  });
+}
+function dynamicFestivalNames(date,data,month){
+  const idx=Number(data?.tithi?.index); if(!Number.isInteger(idx)) return [];
+  const names=[];
+  const add=(condition,name)=>{if(condition)names.push(name);};
+  add(month==='चैत्र'&&idx===0,'चैत्र नवरात्रि आरंभ / गुड़ी पड़वा के आसपास');
+  add(month==='चैत्र'&&idx===8,'राम नवमी');
+  add(month==='वैशाख'&&idx===2,'अक्षय तृतीया');
+  add(month==='आषाढ़'&&idx===14,'गुरु पूर्णिमा');
+  add(month==='श्रावण'&&idx===14,'श्रावण पूर्णिमा / रक्षाबंधन (स्थानीय निर्णय से पुष्टि करें)');
+  add(month==='भाद्रपद'&&idx===3,'गणेश चतुर्थी');
+  add(month==='भाद्रपद'&&idx===22,'श्रीकृष्ण जन्माष्टमी (निशीथ/रोहिणी नियम से पुष्टि करें)');
+  add(month==='आश्विन'&&idx===0,'शारदीय नवरात्रि आरंभ');
+  add(month==='आश्विन'&&idx===9,'विजयादशमी / दशहरा');
+  add(month==='कार्तिक'&&idx===29,'दीपावली / लक्ष्मी पूजन (प्रदोष/अमावस्या नियम से पुष्टि करें)');
+  add(month==='फाल्गुन'&&idx===14,'होलिका दहन / फाल्गुन पूर्णिमा');
+  add(month==='फाल्गुन'&&idx===28,'महाशिवरात्रि (निशीथ काल से पुष्टि करें)');
+  add(month==='माघ'&&idx===3,'वसंत पंचमी / सरस्वती पूजा (पंचमी तिथि से पुष्टि करें)');
+  add(month==='माघ'&&idx===29,'मौनी अमावस्या');
+  add(month==='पौष'&&idx===14,'पौष पूर्णिमा');
+  add(month==='कार्तिक'&&idx===14,'कार्तिक पूर्णिमा / देव दीपावली');
+  add(month==='भाद्रपद'&&idx===0,'गणेशोत्सव आरंभ के आसपास');
+  return [...new Set(names)];
+}
+function renderObservances(date,data,annual=[]){
+  const names=[];
+  const idx=Number(data?.tithi?.index);
+  if(Number.isInteger(idx) && idx>=0 && idx<30){
+    const isShukla=idx<15, day=idx%15, label=TITHI_NAMES[day] || 'तिथि';
+    if(day===10) names.push('एकादशी व्रत (स्थानीय वैष्णव/स्मार्त निर्णय अलग हो सकता है)');
+    if(day===12) names.push('प्रदोष व्रत की तिथि (त्रयोदशी)');
+    if(day===14) names.push(isShukla?'पूर्णिमा व्रत':'अमावस्या / दर्श अमावस्या');
+    if(day===3) names.push(isShukla?'विनायक चतुर्थी व्रत':'संकष्टी चतुर्थी व्रत (चंद्रोदय से पुष्टि करें)');
+    if(!isShukla && day===13) names.push('मासिक शिवरात्रि (निशीथ काल से पुष्टि करें)');
+    if(day===7) names.push(isShukla?'दुर्गाष्टमी / मासिक दुर्गाष्टमी':'कालाष्टमी');
+    if(day===8 && isShukla) names.push('मासिक दुर्गा नवमी');
+    if(day===6 && isShukla) names.push('मासिक स्कन्द षष्ठी');
+    if(day===11) names.push('द्वादशी व्रत / पारण का दिन (एकादशी नियम से पुष्टि करें)');
+    if(day===1 && isShukla) names.push('चंद्र दर्शन / द्वितीया तिथि के observances');
+  }
+  const all=[...annual,...names].filter((v,i,a)=>a.indexOf(v)===i);
+  if(!all.length) return '<div class="observance-list"><p class="daily-note">इस तारीख पर कोई प्रमुख पर्व संकेत नहीं मिला। मासिक तिथि-आधारित व्रत-संकेत नीचे दिख सकते हैं।</p></div>';
+  return `<div class="observance-list">${all.map((name,i)=>`<div class="observance-item"><span class="observance-icon">${i<annual.length?'🪔':'ॐ'}</span><div><b>${safeText(name)}</b><small>${i<annual.length?'खगोलीय तिथि और चंद्र-मास से स्वतः गणना · क्षेत्रीय तारीख अलग हो सकती है':'आज की सूर्योदय तिथि पर आधारित मासिक व्रत-संकेत'}</small></div></div>`).join('')}<p class="daily-disclaimer">महत्वपूर्ण: पर्व-संकेत हर वर्ष पंचांग की गणना से स्वतः बदलते हैं; यह प्रकाशित स्थानीय पंचांग का विकल्प नहीं है। एकादशी, जन्माष्टमी, शिवरात्रि, करवा चौथ, दीपावली आदि के अंतिम निर्णय में चंद्रोदय, प्रदोष, निशीथ, पारण, अधिमास और स्थानीय परंपरा लागू हो सकती है। पूजा से पहले स्थानीय पंचांग से मिलान करें।</p></div>`;
+}
 export async function loadDailyOverview(date){
   const host=$('#daily-overview'); if(!host) return;
   const cityInput=$('#daily-city'); const chosenDate=date || new Date().toISOString().slice(0,10);
@@ -75,7 +137,7 @@ export async function loadDailyOverview(date){
       <div class="daily-subhead"><h3>उदय लग्न मुहूर्त</h3><span>आज के सूर्योदय से अगले सूर्योदय तक</span></div>
       <div class="daily-lagna-list">${lagnaRows||'<p>इस तारीख के लिए लग्न समय उपलब्ध नहीं है।</p>'}</div>
       <div class="daily-subhead"><h3>दिन के शुभ / अशुभ समय</h3></div><div class="daily-times">${period('राहुकाल',data.periods.rahu)}${period('गुलिक काल',data.periods.gulika)}${period('यमगण्ड',data.periods.yamaganda)}${period('अभिजीत मुहूर्त',data.periods.abhijit)}</div>
-      <div class="daily-subhead"><h3>व्रत और त्योहार</h3></div><p class="daily-note">इस तारीख के लिए स्थानीय व्रत/त्योहार सूची अभी उपलब्ध नहीं है। तिथि-आधारित त्योहार सूची जोड़े बिना कोई त्योहार अनुमान से नहीं दिखाया जाएगा।</p>
+      <div class="daily-subhead"><h3>व्रत और त्योहार</h3><span>तिथि व चयनित तारीख के अनुसार</span></div>${renderObservances(chosenDate,data, dynamicFestivalNames(chosenDate,data, await lunarMonthAtDate(chosenDate,place,offset)))}
       <p class="daily-disclaimer">गणना लाहिरी अयनांश, Swiss Ephemeris और सूर्योदय के अनुमान पर आधारित है। क्षेत्रीय पंचांग परंपरा के अनुसार कुछ समय में अंतर हो सकता है।</p>
     </section>`;
     const refreshed=$('#daily-city');

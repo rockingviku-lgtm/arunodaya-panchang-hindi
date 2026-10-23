@@ -134,9 +134,21 @@ $("#app").innerHTML = `
     <button data-page="home">होम</button>
     <button data-page="panchang">पंचांग</button>
     <button data-page="calendar">कैलेंडर</button>
+    <button data-page="muhurat">मुहूर्त</button>
     <button data-page="kundli">कुंडली</button>
+    <a href="/privacy-policy.html">Privacy Policy / गोपनीयता नीति</a>
+    <a href="/disclaimer.html">Disclaimer / अस्वीकरण</a>
+    <a href="/about-us.html">About Us / हमारे बारे में</a>
+    <a href="/contact-us.html">Contact Us / संपर्क करें</a>
+    <a href="/terms-and-conditions.html">Terms &amp; Conditions / नियम व शर्तें</a>
+    <a href="/services.html">Services / सेवाएँ</a>
+    <a href="/cookies.html">Cookies Policy / कुकीज़ नीति</a>
   </div>
-  <small class="copyright">© ${today.getFullYear()} Arunodaya Panchang · श्रद्धा, ज्ञान और गणना</small>
+  <div class="footer-credit">
+    <small>Made In India 🇮🇳</small>
+    <small>Website by Seven Ink Digital Developers Team</small>
+  </div>
+  <small class="copyright">© ${today.getFullYear()} ARUNODAYA PANCHANG · All Copyright Reserved</small>
 </footer>
 
 <nav class="bottom-nav">
