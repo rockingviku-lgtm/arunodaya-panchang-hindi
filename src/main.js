@@ -139,7 +139,7 @@ $("#app").innerHTML = `
     <button data-page="calendar">कैलेंडर</button>
     <button data-page="kundli">कुंडली</button>
   </div>
-  <small class="copyright">© ${today.getFullYear()} Arunodaya Panchang · श्रद्धा, ज्ञान और गणना</small>
+  <small class="copyright">©${today.getFullYear()} Arunodaya Panchang · श्रद्धा, ज्ञान और गणना</small>Website By Seven Ink Digital Developers Team 
 </footer>
 
 <nav class="bottom-nav">
@@ -574,6 +574,89 @@ document.addEventListener("click", async (e) => {
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
   }
+
+if (action === "use-muhurat-location") {
+  if (!navigator.geolocation) {
+    alert("इस ब्राउज़र में GPS सुविधा उपलब्ध नहीं है।");
+    return;
+  }
+
+  actionButton.disabled = true;
+  actionButton.textContent = "लोकेशन प्राप्त हो रही है…";
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      const lat = position.coords.latitude;
+      const lon = position.coords.longitude;
+
+      try {
+        const url = new URL(
+          "https://nominatim.openstreetmap.org/reverse"
+        );
+        url.searchParams.set("format", "jsonv2");
+        url.searchParams.set("lat", String(lat));
+        url.searchParams.set("lon", String(lon));
+
+        const response = await fetch(url.toString());
+        if (!response.ok) {
+          throw new Error("स्थान का नाम नहीं मिल पाया।");
+        }
+
+        const data = await response.json();
+        const a = data.address || {};
+        const place = [
+          a.city || a.town || a.village || a.county,
+          a.state,
+          a.country
+        ].filter(Boolean);
+
+        if (place.length) {
+          $("#m-place").value = [...new Set(place)].join(", ");
+        }
+
+        const form = $("#m-result");
+        if (form) {
+          form.dataset.latitude = String(lat);
+          form.dataset.longitude = String(lon);
+        }
+
+        alert(
+          "GPS स्थान प्राप्त हो गया। अब मुहूर्त की समय-सारणी देखें।"
+        );
+      } catch (error) {
+        console.error("Muhurat GPS lookup failed:", error);
+        alert(
+          "GPS coordinates मिल गए, लेकिन शहर का नाम नहीं मिल पाया।"
+        );
+
+        const form = $("#m-result");
+        if (form) {
+          form.dataset.latitude = String(lat);
+          form.dataset.longitude = String(lon);
+        }
+      } finally {
+        actionButton.disabled = false;
+        actionButton.textContent = "मेरी लोकेशन इस्तेमाल करें";
+      }
+    },
+    (error) => {
+      const messages = {
+        1: "लोकेशन की अनुमति नहीं मिली। ब्राउज़र सेटिंग में अनुमति दें।",
+        2: "डिवाइस की लोकेशन उपलब्ध नहीं है।",
+        3: "लोकेशन प्राप्त करने में समय समाप्त हो गया। फिर कोशिश करें।"
+      };
+
+      alert(messages[error.code] || "लोकेशन प्राप्त नहीं हो सकी।");
+      actionButton.disabled = false;
+      actionButton.textContent = "मेरी लोकेशन इस्तेमाल करें";
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 60000
+    }
+  );
+}
 });
 
 $("#global-date").addEventListener("change", (e) => {
