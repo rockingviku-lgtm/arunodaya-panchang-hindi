@@ -4,6 +4,7 @@ import {
   buildKundliData,
   buildKundliHtml
 } from "./kundli.js";
+import { addKundliPdfButton } from "./kundli-pdf.js";
 import { calculatePanchang, geocodePanchangPlace, formatPanchangTime, formatPanchangDateTime } from "./panchak-engine.js";
 import {
   searchBirthPlaces,
