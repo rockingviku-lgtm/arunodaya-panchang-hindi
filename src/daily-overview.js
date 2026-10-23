@@ -58,15 +58,21 @@ function lunarMonthAtDate(date, place, offset){
     const [y,m,d]=date.split('-').map(Number);
     const ref=new Date(Date.UTC(y,m-1,d,12)-offset*60000);
     const sunMoonAngle=dt=>{const jd=swe.dateToJulianDay(dt);const ayan=swe.getAyanamsa(jd);const sun=swe.calculatePosition(jd,Planet.Sun).longitude-ayan;const moon=swe.calculatePosition(jd,Planet.Moon).longitude-ayan;return norm360(moon-sun);};
+    // Find the most recent conjunction (new moon), i.e. elongation wraps from ~360° to 0°.
     let later=new Date(ref), laterAngle=sunMoonAngle(later), bracket=null;
-    for(let hours=6;hours<=36*24;hours+=6){const earlier=new Date(ref.getTime()-hours*3600000), a=sunMoonAngle(earlier);if(laterAngle<180 && a>=180){bracket={lo:earlier.getTime(),hi:later.getTime()};break;}later=earlier;laterAngle=a;}
+    for(let hours=6;hours<=36*24;hours+=6){
+      const earlier=new Date(ref.getTime()-hours*3600000), a=sunMoonAngle(earlier);
+      if(laterAngle<30 && a>330){bracket={lo:earlier.getTime(),hi:later.getTime()};break;}
+      later=earlier;laterAngle=a;
+    }
     if(!bracket) return null;
     let lo=bracket.lo,hi=bracket.hi;
-    for(let i=0;i<42;i++){const mid=(lo+hi)/2;if(sunMoonAngle(new Date(mid))>=180)lo=mid;else hi=mid;}
+    // Before conjunction elongation is near 360°; after conjunction it is near 0°.
+    for(let i=0;i<42;i++){const mid=(lo+hi)/2;if(sunMoonAngle(new Date(mid))>180)lo=mid;else hi=mid;}
     const newMoon=new Date((lo+hi)/2), jd=swe.dateToJulianDay(newMoon), ayan=swe.getAyanamsa(jd);
     const sunSign=Math.floor(norm360(swe.calculatePosition(jd,Planet.Sun).longitude-ayan)/30);
-    // Amanta month name is associated with the next sidereal solar sign after the sign at new moon.
-    return LUNAR_MONTHS[sunSign];
+    // In the amanta convention, the lunar month is named for the next solar sign.
+    return LUNAR_MONTHS[(sunSign+1)%12];
   });
 }
 function dynamicFestivalNames(date,data,month){
