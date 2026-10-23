@@ -506,8 +506,9 @@ document.addEventListener("click", async (e) => {
         $("#today-date").textContent = fmtDate(d, { day: "numeric", month: "long", year: "numeric" });
         $("#today-meta").textContent = `${data.weekday} · ${data.place}`;
       } else {
-        result.innerHTML = `${common}<div class="panel"><h3>दिन के शुभ / अशुभ समय</h3>${period("राहुकाल",data.periods.rahu)}${period("गुलिक काल",data.periods.gulika)}${period("यमगण्ड",data.periods.yamaganda)}${period("अभिजीत मुहूर्त",data.periods.abhijit)}<p class="muted">ये समय सूर्योदय-सूर्यास्त से निकाले गए हैं। स्थानीय परंपरा के अनुसार मुहूर्त में अंतर हो सकता है।</p></div>`;
-      }
+  result.innerHTML = renderMuhuratResult(data, d, offset);
+  updateMuhuratCards(data, offset);
+}
     } catch (error) {
       console.error("Panchang calculation failed:", error);
       result.innerHTML = `<div class="result-box"><b>गणना पूरी नहीं हो सकी</b><p>${String(error?.message || "अज्ञात त्रुटि").replace(/[<>]/g, "")}</p><p>इंटरनेट कनेक्शन और शहर का नाम जाँचें, फिर दोबारा कोशिश करें।</p></div>`;
