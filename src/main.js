@@ -556,7 +556,7 @@ document.addEventListener("click", async (e) => {
           alert("Coordinates भर दिए गए हैं, लेकिन स्थान का नाम प्राप्त नहीं हुआ।");
         } finally {
           actionButton.disabled = false;
-          actionButton.textContent = "📍 मेरी लोकेशन इस्तेमाल करें";
+          actionButton.textContent = " मेरी लोकेशन इस्तेमाल करें";
         }
       },
       (err) => {
@@ -567,7 +567,7 @@ document.addEventListener("click", async (e) => {
         };
         alert(messages[err.code] || "लोकेशन प्राप्त नहीं हो सकी।");
         actionButton.disabled = false;
-        actionButton.textContent = "📍 मेरी लोकेशन इस्तेमाल करें";
+        actionButton.textContent = " मेरी लोकेशन इस्तेमाल करें";
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
