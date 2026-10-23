@@ -139,7 +139,7 @@ $("#app").innerHTML = `
     <button data-page="calendar">कैलेंडर</button>
     <button data-page="kundli">कुंडली</button>
   </div>
-  <small class="copyright">©${today.getFullYear()} Arunodaya Panchang · श्रद्धा, ज्ञान और गणना</small>Website By Seven Ink Digital Developers Team 
+  <small class="copyright">©${today.getFullYear()} Arunodaya Panchang · श्रद्धा, ज्ञान और गणना</small>
 </footer>
 
 <nav class="bottom-nav">
@@ -288,21 +288,53 @@ function timing(name, desc, icon) {
   return `<div class="timing-item"><span class="timing-icon">${icon}</span><div><b>${name}</b><small>${desc}</small></div><span class="timing-status">जल्द उपलब्ध</span></div>`;
 }
 
+
 function renderMuhurat() {
   return `
-    <div class="page-title"><div class="eyebrow muted">AUSPICIOUS TIMINGS</div><h2>मुहूर्त और शुभ समय</h2><p>स्थान और तारीख के अनुसार मुहूर्त।</p></div>
+    <div class="page-title">
+      <div class="eyebrow muted">AUSPICIOUS TIMINGS</div>
+      <h2>मुहूर्त और शुभ समय</h2>
+      <p>स्थान और तारीख के अनुसार मुहूर्त।</p>
+    </div>
+
     <div class="panel">
-      <div class="panel-head"><div><h3>दैनिक समय-सारणी</h3><p>अपनी तारीख और शहर चुनें</p></div><span class="panel-symbol purple-bg">✧</span></div>
-      <div class="form-grid">
-        <label>तारीख<input id="m-date" type="date" value="${state.date}"></label>
-        <label>शहर / स्थान<input id="m-place" value="Lucknow, India"></label>
-      <button class="btn secondary" type="button" data-action="use-muhurat-location">
-  मेरी लोकेशन इस्तेमाल करें
-      </button>
+      <div class="panel-head">
+        <div>
+          <h3>दैनिक समय-सारणी</h3>
+          <p>अपनी तारीख और शहर चुनें</p>
+        </div>
+        <span class="panel-symbol purple-bg">✧</span>
       </div>
-      <button class="btn primary" data-action="show-muhurat">समय-सारणी देखें →</button>
+
+      <div class="form-grid">
+        <label>
+          तारीख
+          <input id="m-date" type="date" value="${state.date}">
+        </label>
+
+        <label>
+          शहर / स्थान
+          <input id="m-place" value="Lucknow, India">
+        </label>
+      </div>
+
+      <button
+        class="btn secondary"
+        type="button"
+        data-action="use-muhurat-location"
+        style="margin-top: 12px; width: 100%;"
+      >मेरी लोकेशन इस्तेमाल करें</button>
+
+      <button
+        class="btn primary"
+        type="button"
+        data-action="show-muhurat"
+        style="margin-top: 12px;"
+      >समय-सारणी देखें →</button>
+
       <div id="m-result"></div>
     </div>
+
     <div class="timing-list">
       ${timing("राहुकाल", "स्थानीय गणना आवश्यक", "☾")}
       ${timing("गुलिक काल", "स्थानीय गणना आवश्यक", "◷")}
@@ -310,6 +342,7 @@ function renderMuhurat() {
       ${timing("सूर्योदय / सूर्यास्त", "स्थान के अनुसार बदलता है", "☼")}
     </div>`;
 }
+
 
 function renderKundli() {
   return `
