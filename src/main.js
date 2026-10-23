@@ -296,6 +296,9 @@ function renderMuhurat() {
       <div class="form-grid">
         <label>तारीख<input id="m-date" type="date" value="${state.date}"></label>
         <label>शहर / स्थान<input id="m-place" value="Lucknow, India"></label>
+      <button class="btn secondary" type="button" data-action="use-muhurat-location">
+  मेरी लोकेशन इस्तेमाल करें
+      </button>
       </div>
       <button class="btn primary" data-action="show-muhurat">समय-सारणी देखें →</button>
       <div id="m-result"></div>
