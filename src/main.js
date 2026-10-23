@@ -823,10 +823,17 @@ document.addEventListener("submit", async (e) => {
 
     try {
       
-const reportData = await buildKundliData(payload);
-const html = buildKundliHtml(reportData);
-result.innerHTML = html;
-addKundliPdfButton(result, () => data);
+try {
+  const reportData = await buildKundliData(payload);
+  const html = buildKundliHtml(reportData);
+
+  result.innerHTML = html;
+
+  if (!result.querySelector("[data-kpdf-print]")) {
+    addKundliPdfButton(result, () => reportData, {
+      buttonLabel: "Download / Print Kundli PDF"
+    });
+  }
 } finally {
   clearTimeout(timeoutId);
 }
