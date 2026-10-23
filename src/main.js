@@ -5,7 +5,12 @@ import {
   buildKundliHtml
 } from "./kundli.js";
 import { addKundliPdfButton } from "./kundli-pdf.js";
-import { calculatePanchang, geocodePanchangPlace, formatPanchangTime, formatPanchangDateTime } from "./panchak-engine.js"; 
+import {
+  calculatePanchang,
+  geocodePanchangPlace,
+  formatPanchangTime,
+  formatPanchangDateTime
+} from "./panchak-engine.js";
 import {
   searchBirthPlaces,
   getBirthTimezoneOffset
@@ -820,20 +825,24 @@ document.addEventListener("submit", async (e) => {
         ));
       }, 30000);
     });
-
-    try {
       
 try {
-  const reportData = await buildKundliData(payload);
-  const html = buildKundliHtml(reportData);
-
+  const html = await Promise.race([buildKundli(payload), timeout]);
   result.innerHTML = html;
 
+  const reportData = await buildKundliData(payload);
   if (!result.querySelector("[data-kpdf-print]")) {
     addKundliPdfButton(result, () => reportData, {
       buttonLabel: "Download / Print Kundli PDF"
     });
   }
+} catch (err) {
+  console.error("Kundli calculation failed:", err);
+  result.innerHTML = `
+    <div class="result-box error-box">
+      <b>कुंडली नहीं बन सकी</b>
+      <p>${String(err?.message || err)}</p>
+    </div>`;
 } finally {
   clearTimeout(timeoutId);
 }
