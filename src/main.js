@@ -531,8 +531,35 @@ document.addEventListener("click", async (e) => {
     actionButton.textContent = "गणना हो रही है…";
     result.innerHTML = `<div class="result-box"><p>खगोलीय गणना और स्थान खोजे जा रहे हैं…</p></div>`;
     try {
-      const place = await geocodePanchangPlace(placeInput.value || "Lucknow, India");
-      const data = await calculatePanchang({ date: d, lat: place.lat, lon: place.lon, timezoneMinutes: offset, place: place.name });
+      const savedLat = result.dataset.latitude;
+const savedLon = result.dataset.longitude;
+
+let place;
+
+if (
+  savedLat !== undefined &&
+  savedLon !== undefined &&
+  savedLat !== "" &&
+  savedLon !== ""
+) {
+  place = {
+    lat: Number(savedLat),
+    lon: Number(savedLon),
+    name: placeInput.value.trim() || "GPS Location"
+  };
+} else {
+  place = await geocodePanchangPlace(
+    placeInput.value || "Lucknow, India"
+  );
+}
+
+const data = await calculatePanchang({
+  date: d,
+  lat: place.lat,
+  lon: place.lon,
+  timezoneMinutes: offset,
+  place: place.name
+});
       const time = value => formatPanchangTime(value, offset);
       const dateTime = value => formatPanchangDateTime(value, offset);
       const item = (label, value, end) => `<div class="summary-pill"><small>${label}</small><b>${value}</b>${end ? `<span>समाप्ति: ${dateTime(end)}</span>` : ""}</div>`;
