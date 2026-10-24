@@ -581,7 +581,6 @@ document.addEventListener("click", async (e) => {
           alert("Coordinates भर दिए गए हैं, लेकिन स्थान का नाम प्राप्त नहीं हुआ।");
         } finally {
           actionButton.disabled = false;
-          actionButton.textContent = " मेरी लोकेशन इस्तेमाल करें";
         }
       },
       (err) => {
@@ -592,7 +591,6 @@ document.addEventListener("click", async (e) => {
         };
         alert(messages[err.code] || "लोकेशन प्राप्त नहीं हो सकी।");
         actionButton.disabled = false;
-        actionButton.textContent = मेरी लोकेशन इस्तेमाल करें";
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
@@ -676,14 +674,14 @@ document.addEventListener("submit", async (e) => {
     result.innerHTML = `
       <div class="result-box">
         <b>कुंडली की गणना हो रही है…</b>
-        <p>Swiss Ephemeris से परिणाम प्राप्त किए जा रहे हैं।</p>
+        <p>सर्वर से परिणाम प्राप्त किए जा रहे हैं।</p>
       </div>`;
 
     let timeoutId;
     const timeout = new Promise((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error(
-          "30 सेकंड में गणना पूरी नहीं हुई। Swiss Ephemeris की loading जाँचनी होगी।"
+          "30 सेकंड में गणना पूरी नहीं हुई। सर्वर की loading जाँचनी होगी।"
         ));
       }, 30000);
     });
@@ -694,15 +692,16 @@ document.addEventListener("submit", async (e) => {
       result.dataset.kundliData = JSON.stringify(kundliData);
       result.innerHTML = buildKundliHtml(kundliData);
 
-      addKundliPdfButton(result, () => {
-        const raw = result.dataset.kundliData;
-        if (!raw) return null;
-        try {
-          return JSON.parse(raw);
-        } catch {
-          return null;
-        }
-      });
+addKundliPdfButton(result, () => {
+  const raw = result.dataset.kundliData;
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+});
     } finally {
       clearTimeout(timeoutId);
     }
