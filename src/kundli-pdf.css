@@ -1,1 +1,4 @@
-.kr-report{font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif;line-height:1.5;color:#1e293b}.kr-section h2{color:#713f12;border-bottom:2px solid #d6b36b}.kr-table{width:100%;border-collapse:collapse}.kr-table th{background:#f7e8c9;color:#573915}.kr-table th,.kr-table td{border:1px solid #d7dce5;padding:.5rem}.kr-chart{width:100%;height:auto;max-width:420px}
+.kr-print-button{display:block;width:100%;max-width:360px;margin:18px auto;padding:13px 16px;border:0;border-radius:10px;background:#d6a83e;color:#172033;font-weight:700;font-size:16px;cursor:pointer;position:relative;z-index:2}
+.kr-print-button:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+.kr-print-button:active{transform:scale(.99)}
+@media print{.kr-print-button{display:none!important}}
