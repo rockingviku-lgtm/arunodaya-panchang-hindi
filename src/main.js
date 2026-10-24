@@ -360,7 +360,6 @@ function renderKundli() {
           <label>अक्षांश (Latitude)<input id="k-lat" type="number" min="-90" max="90" step="any" required></label>
           <label>देशांतर (Longitude)<input id="k-lon" type="number" min="-180" max="180" step="any" required></label>
         </div>
-        <button class="btn secondary" type="button" data-action="use-location">📍 मेरी लोकेशन इस्तेमाल करें</button>
         <button class="btn primary" type="submit">कुंडली बनाएँ →</button>
       </form>
       <div id="k-result"></div>
@@ -536,7 +535,7 @@ document.addEventListener("click", async (e) => {
         $("#today-date").textContent = fmtDate(d, { day: "numeric", month: "long", year: "numeric" });
         $("#today-meta").textContent = `${data.weekday} · ${data.place}`;
       } else {
-        result.innerHTML = `${common}<div class="panel"><h3>दिन के शुभ / अशुभ समय</h3>${period("राहुकाल",data.periods.rahu)}${period("गुलिक काल",data.periods.gulika)}${period("यमगण्ड",data.periods.yamaganda)}${period("अभिजीत मुहूर्त",data.periods.abhijit)}<p class="muted">ये समय सूर्योदय-सूर्यास्त से निकाले गए हैं। स्थानीय परंपरा के अनुसार मुहूर्त में अंतर हो सकता है।</p></div>`;
+        result.innerHTML = common;
       }
     } catch (error) {
       console.error("Panchang calculation failed:", error);
@@ -585,7 +584,7 @@ document.addEventListener("click", async (e) => {
           alert("Coordinates भर दिए गए हैं, लेकिन स्थान का नाम प्राप्त नहीं हुआ।");
         } finally {
           actionButton.disabled = false;
-          actionButton.textContent = "📍 मेरी लोकेशन इस्तेमाल करें";
+          actionButton.textContent = " मेरी लोकेशन इस्तेमाल करें";
         }
       },
       (err) => {
@@ -596,7 +595,7 @@ document.addEventListener("click", async (e) => {
         };
         alert(messages[err.code] || "लोकेशन प्राप्त नहीं हो सकी।");
         actionButton.disabled = false;
-        actionButton.textContent = "📍 मेरी लोकेशन इस्तेमाल करें";
+        actionButton.textContent = मेरी लोकेशन इस्तेमाल करें";
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
