@@ -58,14 +58,9 @@ async function lagnaWindows(date, place, offset){
       if(sample===end) break;
     }
     if(found===null){
-      // Keep the display structurally consistent rather than repeating a zodiac sign.
-      // This fallback is only used if ephemeris sampling fails to find a boundary.
-      const remaining=11-row;
-      const fallbackEnd=currentStart+(end-currentStart)/remaining;
-      windows.push({sign:currentSign,start:new Date(currentStart),end:new Date(fallbackEnd)});
-      currentStart=fallbackEnd;
-      currentSign=(currentSign+1)%12;
-      scanFrom=fallbackEnd;
+      // Never fabricate lagna timings by dividing the day into equal intervals.
+      // If Swiss Ephemeris cannot locate a real sign boundary, report no result.
+      return [];
     }else{
       windows.push({sign:Math.floor(ascAt(Math.max(start,found-1000))/30),start:new Date(currentStart),end:new Date(found)});
       currentStart=found;
@@ -73,12 +68,8 @@ async function lagnaWindows(date, place, offset){
     }
   }
   windows.push({sign:currentSign,start:new Date(currentStart),end:new Date(end)});
-  // Guarantee 12 distinct signs in zodiac order if a high-latitude/edge-case transition is missed.
-  if(windows.length!==12 || new Set(windows.map(w=>w.sign)).size!==12){
-    const first=Math.floor(ascAt(start)/30);
-    const span=(end-start)/12;
-    return Array.from({length:12},(_,i)=>({sign:(first+i)%12,start:new Date(start+i*span),end:new Date(i===11?end:start+(i+1)*span)}));
-  }
+  // Validate actual ephemeris boundaries. Never replace them with invented equal-length periods.
+  if(windows.length!==12 || new Set(windows.map(w=>w.sign)).size!==12) return [];
   return windows;
 }
 
