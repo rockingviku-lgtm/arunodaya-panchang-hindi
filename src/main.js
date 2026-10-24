@@ -1,24 +1,28 @@
 import "./style.css";
+
 import {
-  buildKundli,
   buildKundliData,
   buildKundliHtml
 } from "./kundli.js";
-import { buildKundliData, buildKundliHtml } from "./kundli.js";
+
 import { addKundliPdfButton } from "./kundli-pdf.js";
-import { calculatePanchang, geocodePanchangPlace, formatPanchangTime, formatPanchangDateTime } from "./panchak-engine.js";
+
 import {
-  searchBirthPlaces,
-  getBirthTimezoneOffset
-} from "./location.js";
+  calculatePanchang,
+  geocodePanchangPlace,
+  formatPanchangTime,
+  formatPanchangDateTime
+} from "./panchak-engine.js";
+
 import {
-  renderMuhuratResult,
-  updateMuhuratCards
-} from "./muhurat.js";
   searchBirthPlaces,
   getBirthTimezoneOffset
 } from "./location.js";
 
+import {
+  renderMuhuratResult,
+  updateMuhuratCards
+} from "./muhurat.js";
 const $ = (s) => document.querySelector(s);
 
 const today = new Date();
