@@ -127,11 +127,67 @@ export function buildKundliReportSections(data){
  <section class="kr-section"><h2>14. योग एवं दोष संकेत</h2>${table(["विषय","स्थिति","टिप्पणी"],dosha)}</section>
  <section class="kr-section"><h2>15. महत्वपूर्ण टिप्पणी</h2><p class="kr-muted">यह रिपोर्ट उपलब्ध वेबसाइट डेटा का सारांश है। तिथि, योग, करण, अवखड़ा, साढ़ेसाती और दशा के पूर्ण परिणाम तभी दिखाएँ जब उनकी गणना/तालिका सत्यापित हो। ज्योतिषीय पद्धतियों में अंतर हो सकता है।</p></section><footer class="kr-copyright">Kundali Pdf Created by ARUNODAYA-PANCHANG<br>©2026 All Copyright Reserved</footer></div>`;
 }
-export function mountKundliPrintButton({resultElement,getReportHtml}){
- if(!resultElement||typeof getReportHtml!=="function")return;
- resultElement.querySelector(".kr-print-button")?.remove();
- const b=document.createElement("button");b.type="button";b.className="kr-print-button";b.textContent="विस्तृत कुंडली PDF / प्रिंट";
- b.addEventListener("click",async()=>{const w=window.open("","_blank");if(!w){alert("PDF खोलने के लिए pop-up की अनुमति दें।");return;}w.document.open();w.document.write(`<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>वैदिक जन्म कुंडली</title><style>body{font-family:sans-serif;padding:20px} .loading{text-align:center;padding:30px}</style></head><body><p class="loading">गोचर शनि की गणना की जा रही है…</p></body></html>`);w.document.close();try{const report=await getReportHtml();w.document.open();w.document.write(`<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>वैदिक जन्म कुंडली</title><style>${PRINT_CSS}</style></head><body>${report}<script>window.onload=()=>setTimeout(()=>window.print(),500);</script></body></html>`);w.document.close();}catch(error){w.document.body.innerHTML="<p>साढ़ेसाती/गोचर गणना नहीं हो सकी: "+String(error?.message||error)+"</p>";}});
+export function mountKundliPrintButton({
+  resultElement,
+  getReportHtml,
+  buttonLabel = "Download PDF / Print",
+  cssHref = "/src/kundli-pdf.css"
+} = {}) {
+  if (!resultElement || typeof getReportHtml !== "function") {
+    throw new Error("resultElement और getReportHtml देना आवश्यक है।");
+  }
+
+  let button = resultElement.querySelector("[data-kpdf-print]");
+  if (!button) {
+    button = document.createElement("button");
+    button.type = "button";
+    button.dataset.kpdfPrint = "true";
+    button.className = "kpdf-print-button";
+    button.textContent = buttonLabel;
+    resultElement.appendChild(button);
+  }
+
+  button.onclick = () => {
+    const html = getReportHtml();
+    if (typeof html !== "string" || !html.trim()) {
+      return window.alert("रिपोर्ट डेटा उपलब्ध नहीं है।");
+    }
+
+    const win = window.open("", "_blank", "noopener,noreferrer");
+    if (!win) {
+      return window.alert("पॉप-अप ब्लॉक है। वेबसाइट के लिए पॉप-अप अनुमति दें।");
+    }
+
+    const fullHtml = `<!doctype html>
+      <html lang="hi">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width,initial-scale=1" />
+          <title>जन्म कुंडली रिपोर्ट</title>
+          <style>${REPORT_CSS}</style>
+          ${cssHref ? `<link rel="stylesheet" href="${cssHref}" />` : ""}
+        </head>
+        <body class="kpdf-document">
+          <div class="kpdf-shell">${html}</div>
+        </body>
+      </html>`;
+
+    win.document.open();
+    win.document.write(fullHtml);
+    win.document.close();
+
+    setTimeout(() => {
+      try {
+        win.focus();
+        win.print();
+      } catch (error) {
+        console.warn("Open print dialog failed:", error);
+      }
+    }, 350);
+  };
+
+  return button;
+}w.document.open();w.document.write(`<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>वैदिक जन्म कुंडली</title><style>body{font-family:sans-serif;padding:20px} .loading{text-align:center;padding:30px}</style></head><body><p class="loading">गोचर शनि की गणना की जा रही है…</p></body></html>`);w.document.close();try{const report=await getReportHtml();w.document.open();w.document.write(`<!doctype html><html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>वैदिक जन्म कुंडली</title><style>${PRINT_CSS}</style></head><body>${report}<script>window.onload=()=>setTimeout(()=>window.print(),500);</script></body></html>`);w.document.close();}catch(error){w.document.body.innerHTML="<p>साढ़ेसाती/गोचर गणना नहीं हो सकी: "+String(error?.message||error)+"</p>";}});
  resultElement.appendChild(b);
 }
 const PRINT_CSS=`@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700;800&display=swap');*{box-sizing:border-box}body{margin:0;background:#eef1f6;color:#1e293b;font-family:"Noto Sans Devanagari","Nirmala UI",sans-serif;font-size:9pt;line-height:1.5}.kr-report{max-width:210mm;margin:16px auto;background:white;padding:10mm}.kr-cover{min-height:260mm;padding:16mm;border:3px double #a8792a;background:linear-gradient(145deg,#fffaf0,#fff0d0);display:flex;flex-direction:column;justify-content:center;page-break-after:always}.kr-ganesh{text-align:center;margin:0 auto 8mm;color:#754612;font-weight:800;font-size:14pt}.kr-ganesh svg{display:block;width:28mm;height:28mm;margin:0 auto 2mm}.kr-eyebrow{font-weight:800;color:#8a5a16;letter-spacing:1px}.kr-cover h1{font-size:30pt;color:#633b12}.kr-cover-grid{display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin-top:15mm}.kr-cover-grid div{padding:4mm;border:1px solid #d8bd8a;background:#ffffffb8;border-radius:6px}.kr-cover-grid span{display:block;color:#8a5a16;font-size:8pt}.kr-cover-grid strong{display:block}.kr-cover-foot{margin-top:16mm;border-top:1px solid #d8bd8a;padding-top:4mm}.kr-section{margin-bottom:9mm}.kr-section h2{font-size:15pt;color:#713f12;border-bottom:2px solid #d6b36b;padding-bottom:2mm}.kr-table{width:100%;border-collapse:collapse;margin:3mm 0 5mm;font-size:8pt}.kr-table th,.kr-table td{border:1px solid #d7dce5;padding:2mm;text-align:left;vertical-align:top;overflow-wrap:anywhere}.kr-table th{background:#f7e8c9;color:#573915}.kr-table tbody tr:nth-child(even){background:#f8fafc}.kr-chart{display:block;width:100%;max-width:140mm;margin:auto;background:#fffdf8;border:1px solid #ead9b7;border-radius:8px}.kr-chart-wrap{width:100%;max-width:140mm;margin:3mm auto}.kr-diamond{border:0;border-radius:0}.kr-copyright{text-align:center;border-top:1px solid #d6b36b;padding:5mm 0 2mm;margin-top:12mm;color:#76501d;font-size:8pt;font-weight:600;page-break-inside:avoid}.kr-muted{font-size:8pt;color:#64748b}.kr-print-button{display:block;margin:12px auto;padding:12px 18px;background:#754612;color:#fff;border:0;border-radius:8px}@page{size:A4;margin:10mm}@media print{body{background:white}.kr-report{max-width:none;margin:0;padding:0}.kr-cover{min-height:270mm}.kr-table tr{break-inside:avoid}.kr-print-button{display:none}}@media(max-width:650px){.kr-report{margin:0;padding:5mm}.kr-cover-grid{grid-template-columns:1fr}}`;
