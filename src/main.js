@@ -685,23 +685,23 @@ document.addEventListener("submit", async (e) => {
     });
 
     try {
-      const kundliData = await Promise.race([buildKundliData(payload), timeout]);
+  const kundliData = await Promise.race([buildKundliData(payload), timeout]);
 
-      result.dataset.kundliData = JSON.stringify(kundliData);
-      result.innerHTML = buildKundliHtml(kundliData);
+  result.dataset.kundliData = JSON.stringify(kundliData);
+  result.innerHTML = buildKundliHtml(kundliData);
 
-      addKundliPdfButton(result, () => {
-        const raw = result.dataset.kundliData;
-        if (!raw) return null;
-        try {
-          return JSON.parse(raw);
-        } catch {
-          return null;
-        }
-      });
-    } finally {
-      clearTimeout(timeoutId);
+  addKundliPdfButton(result, () => {
+    const raw = result.dataset.kundliData;
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
     }
+  });
+} finally {
+  clearTimeout(timeoutId);
+}
   } catch (err) {
     console.error("Kundli calculation failed:", err);
     result.innerHTML = `
