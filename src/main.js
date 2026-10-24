@@ -321,14 +321,7 @@ function renderMuhurat() {
       </div>
       <button class="btn primary" data-action="show-muhurat">समय-सारणी देखें →</button>
       <div id="m-result"></div>
-    </div>
-    <div class="timing-list">
-      ${timing("राहुकाल", "स्थानीय गणना आवश्यक", "☾")}
-      ${timing("गुलिक काल", "स्थानीय गणना आवश्यक", "◷")}
-      ${timing("अभिजीत मुहूर्त", "सूर्योदय-सूर्यास्त आवश्यक", "✧")}
-      ${timing("सूर्योदय / सूर्यास्त", "स्थान के अनुसार बदलता है", "☼")}
-    </div>`;
-}
+    </div>  
 
 function renderKundli() {
   return `
