@@ -648,6 +648,7 @@ document.addEventListener("submit", async (e) => {
       time,
       selectedBirthPlace.timezone
     );
+
     const lat = Number(selectedBirthPlace.latitude);
     const lon = Number(selectedBirthPlace.longitude);
 
@@ -664,7 +665,8 @@ document.addEventListener("submit", async (e) => {
       time,
       timezoneMinutes,
       lat,
-      lon
+      lon,
+      place: selectedBirthPlace.name
     };
 
     result.innerHTML = `
@@ -677,14 +679,26 @@ document.addEventListener("submit", async (e) => {
     const timeout = new Promise((_, reject) => {
       timeoutId = setTimeout(() => {
         reject(new Error(
-          "30 सेकंड में गणना पूरी नहीं हुई। src/kundli.js में Swiss Ephemeris की loading जाँचनी होगी।"
+          "30 सेकंड में गणना पूरी नहीं हुई। Swiss Ephemeris की loading जाँचनी होगी।"
         ));
       }, 30000);
     });
 
     try {
-      const html = await Promise.race([buildKundli(payload), timeout]);
-      result.innerHTML = html;
+      const kundliData = await Promise.race([buildKundliData(payload), timeout]);
+
+      result.dataset.kundliData = JSON.stringify(kundliData);
+      result.innerHTML = buildKundliHtml(kundliData);
+
+      addKundliPdfButton(result, () => {
+        const raw = result.dataset.kundliData;
+        if (!raw) return null;
+        try {
+          return JSON.parse(raw);
+        } catch {
+          return null;
+        }
+      });
     } finally {
       clearTimeout(timeoutId);
     }
@@ -699,7 +713,6 @@ document.addEventListener("submit", async (e) => {
     if (submitButton) submitButton.disabled = false;
   }
 });
-
 setDate(state.date);
 
 // Keep the home-page daily Panchang in sync if the page remains open across midnight.
