@@ -325,7 +325,12 @@ function renderMuhurat() {
       </div>
       <button class="btn primary" data-action="show-muhurat">समय-सारणी देखें →</button>
       <div id="m-result"></div>
-    </div>  
+    </div>     
+ <div class="notice compact">
+      <span>ⓘ</span>
+      <p>मुहूर्त के समय स्थान और तारीख के अनुसार बदल सकते हैं।</p>
+    </div>`;
+}
 
 function renderKundli() {
   return `
