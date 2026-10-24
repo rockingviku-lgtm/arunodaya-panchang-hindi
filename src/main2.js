@@ -353,7 +353,6 @@ function renderKundli() {
           <label>अक्षांश (Latitude)<input id="k-lat" type="number" min="-90" max="90" step="any" required></label>
           <label>देशांतर (Longitude)<input id="k-lon" type="number" min="-180" max="180" step="any" required></label>
         </div>
-        <button class="btn secondary" type="button" data-action="use-location">📍 मेरी लोकेशन इस्तेमाल करें</button>
         <button class="btn primary" type="submit">कुंडली बनाएँ →</button>
       </form>
       <div id="k-result"></div>
@@ -578,7 +577,6 @@ document.addEventListener("click", async (e) => {
           alert("Coordinates भर दिए गए हैं, लेकिन स्थान का नाम प्राप्त नहीं हुआ।");
         } finally {
           actionButton.disabled = false;
-          actionButton.textContent = "📍 मेरी लोकेशन इस्तेमाल करें";
         }
       },
       (err) => {
@@ -589,7 +587,6 @@ document.addEventListener("click", async (e) => {
         };
         alert(messages[err.code] || "लोकेशन प्राप्त नहीं हो सकी।");
         actionButton.disabled = false;
-        actionButton.textContent = "📍 मेरी लोकेशन इस्तेमाल करें";
       },
       { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 }
     );
