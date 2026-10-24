@@ -1,3 +1,17 @@
+import { buildKundliReportSections, mountKundliPrintButton } from "./kundli-report.js";
+
+/** Browser print dialog provides "Save as PDF"; no extra package is required. */
+export function createKundliPdfReport(data) {
+  return buildKundliReportSections(data);
+}
+
+export function addKundliPdfButton(resultElement, getData, options = {}) {
+  return mountKundliPrintButton({
+    resultElement,
+    getReportHtml: () => createKundliPdfReport(getData()),
+    ...options
+  });
+}
 import { calculateVimshottariDasha, formatDashaDateTime, dashaDurationYears } from "./dasha-engine.js";
 const SIGNS=["मेष","वृषभ","मिथुन","कर्क","सिंह","कन्या","तुला","वृश्चिक","धनु","मकर","कुंभ","मीन"];
 const NAK=["अश्विनी","भरणी","कृत्तिका","रोहिणी","मृगशिरा","आर्द्रा","पुनर्वसु","पुष्य","आश्लेषा","मघा","पूर्वा फाल्गुनी","उत्तरा फाल्गुनी","हस्त","चित्रा","स्वाती","विशाखा","अनुराधा","ज्येष्ठा","मूल","पूर्वाषाढ़ा","उत्तराषाढ़ा","श्रवण","धनिष्ठा","शतभिषा","पूर्वाभाद्रपद","उत्तराभाद्रपद","रेवती"];
